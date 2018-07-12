@@ -168,7 +168,7 @@ single_words = [
          {"src": "http://www.handspeak.com/word/y/yoga-fs.mp4", "word": "yoga"},
          {"src": "http://www.handspeak.com/word/z/zoo-fs.mp4", "word": "zoo"}
         ]
-        
+
 double_words = [
   {"src": "http://www.handspeak.com/spell/practice/double-word/bar-bag.mp4", "word": "bar bag"},
   {"src": "http://www.handspeak.com/spell/practice/double-word/bar-war.mp4", "word": "bar war"},
@@ -225,22 +225,22 @@ double_words = [
 import urllib3
 http = urllib3.PoolManager()
 
-# for word in single_words:
-#     r = http.request('GET', word['src'], preload_content=False)
-#
-#     with open("C:/Users/Riley/DeepLetters/Data/HandSpeak/Single/"+word['word']+".mp4", 'wb') as out:
-#         while True:
-#             data = r.read(1024)
-#             if not data:
-#                 break
-#             out.write(data)
-#
-#     r.release_conn()
-    
+for word in single_words:
+    r = http.request('GET', word['src'], preload_content=False)
+
+    with open("C:/Users/riley/DeepLetters/Data/HandSpeak/Single/"+word['word']+".mp4", 'wb') as out:
+        while True:
+            data = r.read(1024)
+            if not data:
+                break
+            out.write(data)
+
+    r.release_conn()
+
 for word in double_words:
     r = http.request('GET', word['src'], preload_content=False)
 
-    with open("C:/Users/Riley/DeepLetters/Data/HandSpeak/Double/"+word['word']+".mp4", 'wb') as out:
+    with open("C:/Users/riley/DeepLetters/Data/HandSpeak/Double/" + word['word'] + ".mp4", 'wb') as out:
         while True:
             data = r.read(1024)
             if not data:
