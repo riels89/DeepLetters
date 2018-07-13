@@ -228,7 +228,7 @@ http = urllib3.PoolManager()
 for word in single_words:
     r = http.request('GET', word['src'], preload_content=False)
 
-    with open("C:/Users/riley/DeepLetters/Data/HandSpeak/Single/"+word['word']+".mp4", 'wb') as out:
+    with open("C:/Users/riley/DeepLetters/Data/HandSpeak/Single/" + word['word'] + ".mp4", 'wb') as out:
         while True:
             data = r.read(1024)
             if not data:
