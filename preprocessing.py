@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import os
 from scipy import ndimage, misc
+import pandas as pd
 
 def load_videos(folder_path, number_vids=-1, symbols=list('abcdefghijklmnopqrstuvwxyz1234567890')):
     videos = {}
@@ -65,7 +66,19 @@ def make_data_heap():
                     cv2.imwrite(new_loc, image_resized)
                     letter_counts[file[6].lower()] += 1
     print(letter_counts)
-make_data_heap()
+
+def make_picture_list():
+    picture_list = []
+    for root, dirnames, filenames in os.walk('C:/Users/riley/DeepLettersData/data_heap/128x128/'):
+        for file in filenames:
+            if file[0] != 'j' and file[0] != 'z':
+                print(file)
+                picture_list.append({'file_name': file, 'Letter': file[0], 'Number': file[1:len(file) - 4]})
+    picture_list = pd.DataFrame(picture_list)
+    print(picture_list)
+    picture_list.to_csv('C:/Users/riley/DeepLettersData/data_heap/128X128.csv')
+
+make_picture_list()
 # videos = load_data('C:/Users/Riley/Documents/.Research Project/0', 1, symbols='ABCDEFGHIJKLMNOPQRSTUVWYXZ')
 
 # print(videos['A'][1][400, 400])

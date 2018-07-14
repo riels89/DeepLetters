@@ -1,7 +1,31 @@
 import tensorflow as tf
-from matplotlib import plyplot as plt
+from matplotlib import pyplot as plt
+import pandas as pd
+import numpy as np
+from model import model
+import cv2
+import math
+from sklearn.preprocessing import LabelEncoder
 
+X = tf.placeholder(tf.float32, [None, 128, 128, 3], name='X')
+y = tf.placeholder(tf.int64, [None], name='y')
+is_training = tf.placeholder(tf.bool, name='is_training')
 
+y_out = model().create_model(X, is_training)
+
+mean_loss = tf.losses.softmax_cross_entropy(tf.one_hot(y, 24), y_out)
+optimzer = tf.train.AdamOptimizer(learning_rate=1e-4)
+
+extra_update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+with tf.control_dependencies(extra_update_ops):
+    train_step = optimzer.minimize(mean_loss)
+
+def get_pictures(Xd):
+    images = np.empty((Xd.shape[0], 128, 128, 3))
+    for i in range(Xd.shape[0]):
+        im = cv2.imread('C:/Users/riley/DeepLettersData/data_heap/128x128/' + Xd[i])
+        images[i] = im
+    return images
 def run_model(session, predict, loss_val, Xd, yd,
               epochs=1, batch_size=64, print_every=100,
               training=None, plot_losses=False):
@@ -34,12 +58,13 @@ def run_model(session, predict, loss_val, Xd, yd,
             idx = train_indicies[start_idx:start_idx + batch_size]
 
             # create a feed dictionary for this batch
-            feed_dict = {X: Xd[idx, :],
+            feed_dict = {X: get_pictures(Xd[idx]),
                          y: yd[idx],
                          is_training: training_now}
             # get batch size
             actual_batch_size = yd[idx].shape[0]
 
+            print(actual_batch_size)
             # have tensorflow compute loss and correct predictions
             # and (if given) perform a training step
             loss, corr, _ = session.run(variables, feed_dict=feed_dict)
@@ -66,24 +91,28 @@ def run_model(session, predict, loss_val, Xd, yd,
             plt.show()
     return total_loss, total_correct
 
+def train():
 
-X = tf.placeholder(tf.float32, [None, 128, 128, 3])
-y = tf.placeholder(tf.int64, [None])
-is_training = tf.placeholder(tf.bool)
+    with tf.Session() as sess:
+        with tf.device("/cpu:0"):  # "/cpu:0" or "/gpu:0"
+            data = pd.read_csv('C:/Users/riley/DeepLettersData/data_heap/128X128.csv')
 
-y_out = my_model(X, is_training)
-mean_loss = tf.losses.softmax_cross_entropy(tf.one_hot(y, 24), y_out)
-optimzer = tf.train.AdamOptimizer(learning_rate=1e-4)
+            X_train = np.array(data['file_name'])
+            mean_image = np.mean(X_train, axis=0)
+            X_train -= mean_image
 
-extra_update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-with tf.control_dependancies(extra_update_ops):
-    train_step = optimzer.minimize(mean_loss)
+            label_encoder = LabelEncoder()
+            y_train = label_encoder.fit_transform(np.array(data['Letter']))
 
-with tf.Session() as sess:
-    with tf.device("/cpu:0"):  # "/cpu:0" or "/gpu:0"
-        sess.run(tf.global_variables_initializer())
-        print('Training')
-        run_model(sess, y_out, mean_loss, X_train, y_train, 1, 64, 100, train_step, True)
-        print('Validation')
-        run_model(sess, y_out, mean_loss, X_val, y_val, 1, 64)
+            sess.run(tf.global_variables_initializer())
+            print('Training')
+            run_model(sess, y_out, mean_loss, X_train, y_train, 1, 64, 100, train_step, True)
+            print('Validation')
+            #run_model(sess, y_out, mean_loss, X_val, y_val, 1, 64)
 
+# data = pd.read_csv('C:/Users/riley/DeepLettersData/data_heap/128X128.csv')
+# X_train = np.array(data['file_name'])[:64]
+# y_train = np.array(data['Letter'])
+#
+# get_pictures(X_train)
+train()

@@ -2,14 +2,11 @@ import tensorflow as tf
 
 class model(object):
 
-    def __init__():
-        pass
-
-    def create_model(X, is_training):
+    def create_model(slef, X, is_training):
         X = tf.reshape(X, [-1, 128, 128, 3])
         conv1 = tf.layers.conv2d(inputs=X,
                                  filters=32,
-                                 kernal_size=[3, 3],
+                                 kernel_size=[3, 3],
                                  strides=(1, 1),
                                  padding="same",
                                  activation=tf.nn.relu,
@@ -73,8 +70,10 @@ class model(object):
                               name='FC_1')
         dropout1 = tf.layers.dropout(inputs=fc1, rate=.2, training=is_training, name='dropout_1')
 
-        fc2 = tf.layers.dense(fc1, 2048, activation=tf.nn.relu, kernel_initializer=tf.contrib.layers.xavier_initializer(),
-                              name='FC_1')
+        fc2 = tf.layers.dense(dropout1, 2048, activation=tf.nn.relu, kernel_initializer=tf.contrib.layers.xavier_initializer(),
+                              name='FC_2')
         dropout2 = tf.layers.dropout(inputs=fc2, rate=.2, training=is_training, name='dropout_1')
 
-        return dropout
+        y_out = tf.layers.dense(dropout2, 24, kernel_initializer=tf.contrib.layers.xavier_initializer(),
+                                name='Output')
+        return y_out
