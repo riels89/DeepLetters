@@ -1,2 +1,2 @@
-__pycache__/
-ph2014-dev-set-handshape-annotations/
+__pycache__\
+ph2014-dev-set-handshape-annotations\
