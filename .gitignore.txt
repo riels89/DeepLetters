@@ -1,2 +1,2 @@
-Data/
-data_heap/
+__pycache__/
+ph2014-dev-set-handshape-annotations/
