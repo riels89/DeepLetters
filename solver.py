@@ -64,7 +64,7 @@ def run_model(session, predict, loss_val, Xd, yd,
             # get batch size
             actual_batch_size = yd[idx].shape[0]
 
-            print(actual_batch_size)
+            #print(actual_batch_size)
             # have tensorflow compute loss and correct predictions
             # and (if given) perform a training step
             loss, corr, _ = session.run(variables, feed_dict=feed_dict)
@@ -97,16 +97,16 @@ def train():
         with tf.device("/cpu:0"):  # "/cpu:0" or "/gpu:0"
             data = pd.read_csv('C:/Users/riley/DeepLettersData/data_heap/128X128.csv')
 
-            X_train = np.array(data['file_name'])
-            mean_image = np.mean(X_train, axis=0)
-            X_train -= mean_image
+            X_train = np.array(data['file_name'])[:1000]
+            #mean_image = np.mean(X_train, axis=0)
+            #X_train -= mean_image
 
             label_encoder = LabelEncoder()
-            y_train = label_encoder.fit_transform(np.array(data['Letter']))
+            y_train = label_encoder.fit_transform(np.array(data['Letter'][:1000]))
 
             sess.run(tf.global_variables_initializer())
             print('Training')
-            run_model(sess, y_out, mean_loss, X_train, y_train, 1, 64, 100, train_step, True)
+            run_model(sess, y_out, mean_loss, X_train, y_train, 10, 64, 100, train_step, True)
             print('Validation')
             #run_model(sess, y_out, mean_loss, X_val, y_val, 1, 64)
 
