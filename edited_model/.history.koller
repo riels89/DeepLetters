@@ -1,0 +1,20 @@
+2016-06-03.14-37-44 cp /work/cv3/koller/features/danish_nz_ph2014/caffe-hand.1miohands-afterCVPR-75%-fixedLex-noMedianSil-trainPixelMean-noPH1it/data/it6.lr0.0005-maxit52176-policystep-weightdecay0.0005-step39132-lastLayerLR-1-gamma0.5/bvlc_googlenet_it6.lr0.0005-maxit52176-policystep-weightdecay0.0005-step39132-lastLayerLR-1-gamma0.5_iter_35045.caffemodel .
+2016-06-03.14-38-23 cp /work/cv3/koller/features/danish_nz_ph2014/caffe-hand.1miohands-afterCVPR-75%-fixedLex-noMedianSil-trainPixelMean-noPH1it/data/it6.lr0.0005-maxit52176-policystep-weightdecay0.0005-step39132-lastLayerLR-1-gamma0.5/*.prototxt .
+2016-06-03.14-38-29 cp /work/cv3/koller/features/danish_nz_ph2014/caffe-hand.1miohands-afterCVPR-75%-fixedLex-noMedianSil-trainPixelMean-noPH1it/data/it6.lr0.0005-maxit52176-policystep-weightdecay0.0005-step39132-lastLayerLR-1-gamma0.5/it6-dnnTraintask.danish_nz_ph-fixednomediansil-noPhStart-moreEval-trainpixelmean-no0PH.o9894192 .
+2016-06-03.14-39-29 less it6-dnnTraintask.danish_nz_ph-fixednomediansil-noPhStart-moreEval-trainpixelmean-no0PH.o9894192 
+2016-06-03.14-39-33 grep top1 it6-dnnTraintask.danish_nz_ph-fixednomediansil-noPhStart-moreEval-trainpixelmean-no0PH.o9894192
+2016-06-03.14-39-38 grep top-1 it6-dnnTraintask.danish_nz_ph-fixednomediansil-noPhStart-moreEval-trainpixelmean-no0PH.o9894192
+2016-06-03.14-39-44 grep top-1 it6-dnnTraintask.danish_nz_ph-fixednomediansil-noPhStart-moreEval-trainpixelmean-no0PH.o9894192|sort -k11
+2016-06-03.14-39-48 grep top-1 it6-dnnTraintask.danish_nz_ph-fixednomediansil-noPhStart-moreEval-trainpixelmean-no0PH.o9894192|sort -k11 -g
+2016-06-03.14-40-12 less it6-dnnTraintask.danish_nz_ph-fixednomediansil-noPhStart-moreEval-trainpixelmean-no0PH.o9894192 
+2016-06-03.14-40-13 grep top-1 it6-dnnTraintask.danish_nz_ph-fixednomediansil-noPhStart-moreEval-trainpixelmean-no0PH.o9894192|sort -k11 -g
+2016-06-03.14-41-10 ltr
+2016-06-03.14-41-12 rm it6-dnnTraintask.danish_nz_ph-fixednomediansil-noPhStart-moreEval-trainpixelmean-no0PH.o9894192 
+2016-06-03.14-41-23 less solver.prototxt 
+2016-06-03.14-41-41 vi solver.prototxt
+2016-06-03.14-43-57 vi submit-net.prototxt 
+2016-06-03.14-44-17 vi solver.prototxt
+2016-06-03.14-44-18 ltr
+2016-06-03.14-53-12 ltr
+2016-06-03.14-55-53 mv bvlc_googlenet_it6.lr0.0005-maxit52176-policystep-weightdecay0.0005-step39132-lastLayerLR-1-gamma0.5_iter_35045.caffemodel 1miohands-v2.caffemodel
+2016-06-03.14-56-12 vi solver.prototxt 
