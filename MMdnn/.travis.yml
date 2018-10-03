@@ -1,0 +1,86 @@
+sudo: required
+dist: xenial
+
+os:
+  - linux
+  - osx
+
+language: python
+python:
+  - "2.7"
+  - "3.5"
+
+env:
+  - TEST_PARSER=tensorflow TEST_ONNX=true
+  - TEST_PARSER=tensorflow TEST_ONNX=false
+  - TEST_PARSER=keras TEST_ONNX=true
+  - TEST_PARSER=keras TEST_ONNX=false
+  - TEST_PARSER=cntk TEST_ONNX=true
+  - TEST_PARSER=cntk TEST_ONNX=false
+  - TEST_PARSER=caffe TEST_ONNX=true
+  - TEST_PARSER=caffe TEST_ONNX=false
+  - TEST_PARSER=mxnet TEST_ONNX=true
+  - TEST_PARSER=mxnet TEST_ONNX=false
+  - TEST_PARSER=pytorch TEST_ONNX=true
+  - TEST_PARSER=pytorch TEST_ONNX=false
+  - TEST_PARSER=paddle TEST_ONNX=true
+  - TEST_PARSER=paddle TEST_ONNX=false
+  - TEST_PARSER=coreml TEST_ONNX=true
+  - TEST_PARSER=coreml TEST_ONNX=false
+  - TEST_PARSER=darknet TEST_ONNX=true
+  - TEST_PARSER=darknet TEST_ONNX=false
+  - TEST_PARSER=tensorflow_frozen TEST_ONNX=true
+  - TEST_PARSER=tensorflow_frozen TEST_ONNX=false
+
+cache:
+  directories:
+    - $HOME/.cache/pip
+
+addons:
+  apt:
+    update: true
+
+before_install:
+  - sudo apt-get install -y openmpi-bin
+  - sudo apt-get install -y libprotobuf-dev libsnappy-dev libhdf5-serial-dev protobuf-compiler
+  - sudo apt-get install -y --no-install-recommends libboost-all-dev
+  - sudo apt-get install -y libatlas-base-dev
+  - sudo apt-get install -y libgflags-dev libgoogle-glog-dev
+
+install:
+  - pip install -q -r $(python requirements/select_requirements.py)
+  - pip install wget
+
+before_script:
+  - export LD_LIBRARY_PATH=/home/travis/virtualenv/python3.5.6/lib/python3.5/site-packages/caffe/libs:/home/travis/virtualenv/python2.7.14/lib/python2.7/site-packages/caffe/libs:${LD_LIBRARY_PATH}
+
+after_failure: true
+
+after_success: true
+
+after_script: true
+
+script: bash test.sh $TEST_PARSER
+
+matrix:
+  fast_finish: true
+
+  allow_failures:
+    - os: osx
+    - env: TEST_PARSER=paddle TEST_ONNX=true
+    - env: TEST_PARSER=paddle TEST_ONNX=false
+
+  exclude:
+    - python: "3.5"
+      env: TEST_PARSER=paddle TEST_ONNX=true
+    - python: "3.5"
+      env: TEST_PARSER=paddle TEST_ONNX=false
+    - os: linux
+      env: TEST_PARSER=coreml TEST_ONNX=true
+    - os: linux
+      env: TEST_PARSER=coreml TEST_ONNX=false
+
+notifications:
+  email:
+    on_success: never
+    on_failure: never
