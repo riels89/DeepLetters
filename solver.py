@@ -6,29 +6,42 @@ from model import model
 import cv2
 import math
 from sklearn.preprocessing import LabelEncoder
+import sys
+sys.path.append('CNN')
+import deepletters_cnn as model
 
-X = tf.placeholder(tf.float32, [None, 128, 128, 3], name='X')
+X = tf.placeholder(tf.float32, shape=(None, 227, 227, 3), name='y')
 y = tf.placeholder(tf.int64, [None], name='y')
 is_training = tf.placeholder(tf.bool, name='is_training')
 
-y_out = model().create_model(X, is_training)
+loss3_SLclassifier_1, loss2_SLclassifier_1, loss1_SLclassifier_1 = model.KitModel(weight_file ='auto_gen/weights.npy',
+                                                                                        X=X, is_training=True)
+#mean_loss = tf.losses.softmax_cross_entropy(tf.one_hot(y, 24), y_out)
 
-mean_loss = tf.losses.softmax_cross_entropy(tf.one_hot(y, 24), y_out)
+real_loss = tf.losses.softmax_cross_entropy(tf.one_hot(y, 24), loss3_SLclassifier_1)
+aux_loss2 = tf.losses.softmax_cross_entropy(tf.one_hot(y, 24), loss2_SLclassifier_1)
+aux_loss1 = tf.losses.softmax_cross_entropy(tf.one_hot(y, 24), loss1_SLclassifier_1)
+
+total_loss = real_loss + .3 * aux_loss2 + .3 * aux_loss1
+
 optimzer = tf.train.AdamOptimizer(learning_rate=1e-4)
 
 extra_update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
 with tf.control_dependencies(extra_update_ops):
-    train_step = optimzer.minimize(mean_loss)
+    train_step = optimzer.minimize(total_loss)
 
 def get_pictures(Xd):
-    images = np.empty((Xd.shape[0], 128, 128, 3))
+    images = np.empty((Xd.shape[0], 227, 227, 3))
     for i in range(Xd.shape[0]):
-        im = cv2.imread('C:/Users/riley/DeepLettersData/data_heap/128x128/' + Xd[i])
+        im = cv2.imread('C:/Users/riley/DeepLetters/data_heap/' + Xd[i])
         images[i] = im
+    assert not np.any(np.isnan(images))
     return images
+
 def run_model(session, predict, loss_val, Xd, yd,
               epochs=1, batch_size=64, print_every=100,
               training=None, plot_losses=False):
+
     # have tensorflow compute accuracy
     correct_prediction = tf.equal(tf.argmax(predict, 1), y)
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
@@ -41,7 +54,7 @@ def run_model(session, predict, loss_val, Xd, yd,
 
     # setting up variables we want to compute (and optimizing)
     # if we have a training function, add that to things we compute
-    variables = [mean_loss, correct_prediction, accuracy]
+    variables = [total_loss, correct_prediction, accuracy]
     if training_now:
         variables[-1] = training
 
@@ -64,7 +77,7 @@ def run_model(session, predict, loss_val, Xd, yd,
             # get batch size
             actual_batch_size = yd[idx].shape[0]
 
-            #print(actual_batch_size)
+            # print(actual_batch_size)
             # have tensorflow compute loss and correct predictions
             # and (if given) perform a training step
             loss, corr, _ = session.run(variables, feed_dict=feed_dict)
@@ -75,13 +88,12 @@ def run_model(session, predict, loss_val, Xd, yd,
 
             # print every now and then
             if training_now and (iter_cnt % print_every) == 0:
-                print("Iteration {0}: with minibatch training loss = {1:.3g} and accuracy of {2:.2g}"
-                      .format(iter_cnt, loss, np.sum(corr) / actual_batch_size))
+                print("Iteration " + str(iter_cnt) + ": with minibatch training loss = " + str(loss) + " and accuracy of " + str(np.sum(corr) / actual_batch_size))
+
             iter_cnt += 1
         total_correct = correct / Xd.shape[0]
-        total_loss = np.sum(losses) / Xd.shape[0]
-        print("Epoch {2}, Overall loss = {0:.3g} and accuracy of {1:.3g}"
-              .format(total_loss, total_correct, e + 1))
+        epoch_loss = np.sum(losses) / Xd.shape[0]
+        print("Epoch " + str(e + 1) + ", Overall loss = " + str(epoch_loss) + " and accuracy of " + str(total_correct))
         if plot_losses:
             plt.plot(losses)
             plt.grid(True)
@@ -89,26 +101,26 @@ def run_model(session, predict, loss_val, Xd, yd,
             plt.xlabel('minibatch number')
             plt.ylabel('minibatch loss')
             plt.show()
-    return total_loss, total_correct
+    return epoch_loss, total_correct
 
 def train():
 
     with tf.Session() as sess:
         with tf.device("/cpu:0"):  # "/cpu:0" or "/gpu:0"
-            data = pd.read_csv('C:/Users/riley/DeepLettersData/data_heap/128X128.csv')
+            data = pd.read_csv('C:/Users/riley/DeepLetters/227X227.csv')
 
-            X_train = np.array(data['file_name'])[:1000]
+            X_train = np.array(data['file_name'])
             #mean_image = np.mean(X_train, axis=0)
             #X_train -= mean_image
 
             label_encoder = LabelEncoder()
-            y_train = label_encoder.fit_transform(np.array(data['Letter'][:1000]))
+            y_train = label_encoder.fit_transform(np.array(data['Letter']))
 
             sess.run(tf.global_variables_initializer())
             print('Training')
-            run_model(sess, y_out, mean_loss, X_train, y_train, 10, 64, 100, train_step, True)
+            run_model(sess, loss3_SLclassifier_1, total_loss, X_train, y_train, 100, 64, 100, train_step, True)
             print('Validation')
-            #run_model(sess, y_out, mean_loss, X_val, y_val, 1, 64)
+            run_model(sess, loss3_SLclassifier_1, total_loss, X_val, y_val, 1, 64)
 
 # data = pd.read_csv('C:/Users/riley/DeepLettersData/data_heap/128X128.csv')
 # X_train = np.array(data['file_name'])[:64]
