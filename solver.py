@@ -33,7 +33,7 @@ with tf.control_dependencies(extra_update_ops):
 def get_pictures(Xd):
     images = np.empty((Xd.shape[0], 227, 227, 3))
     for i in range(Xd.shape[0]):
-        im = cv2.imread('C:/Users/riley/DeepLetters/data_heap/' + Xd[i])
+        im = cv2.imread('data_heap/' + Xd[i])
         images[i] = im
     assert not np.any(np.isnan(images))
     return images
@@ -107,22 +107,26 @@ def train():
 
     with tf.Session() as sess:
         with tf.device("/cpu:0"):  # "/cpu:0" or "/gpu:0"
-            data = pd.read_csv('C:/Users/riley/DeepLetters/227X227.csv')
-
-            X_train = np.array(data['file_name'])
-            #mean_image = np.mean(X_train, axis=0)
-            #X_train -= mean_image
+            data = pd.read_csv('227X227.csv')
+            X_data = np.array(data['file_name'])
+            y_data = np.array(data['Letter'])
+            mean_image = np.mean(X_data, axis=0)
+            X_data -= mean_image
+            X_train = X_data[:55000]
 
             label_encoder = LabelEncoder()
-            y_train = label_encoder.fit_transform(np.array(data['Letter']))
+            y_train = label_encoder.fit_transform(y_data[:55000])
 
+            X_val = X_data[55000:]
+            y_val = y_data[55000:]
+            
             sess.run(tf.global_variables_initializer())
             print('Training')
-            run_model(sess, loss3_SLclassifier_1, total_loss, X_train, y_train, 100, 64, 100, train_step, True)
+            run_model(sess, loss3_SLclassifier_1, total_loss, X_train, y_train, 1, 128, 100, train_step, True)
             print('Validation')
-            run_model(sess, loss3_SLclassifier_1, total_loss, X_val, y_val, 1, 64)
+            run_model(sess, loss3_SLclassifier_1, total_loss, X_val, y_val, 1, 128)
 
-# data = pd.read_csv('C:/Users/riley/DeepLettersData/data_heap/128X128.csv')
+# data = pd.read_csv('C:/Users/Riley/DeepLettersData/data_heap/128X128.csv')
 # X_train = np.array(data['file_name'])[:64]
 # y_train = np.array(data['Letter'])
 #
