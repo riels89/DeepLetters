@@ -10,6 +10,8 @@ import sys
 sys.path.append('CNN')
 import deepletters_cnn as model
 
+mean_image = np.load('CNN/mean_image.npy')
+
 X = tf.placeholder(tf.float32, shape=(None, 227, 227, 3), name='y')
 y = tf.placeholder(tf.int64, [None], name='y')
 is_training = tf.placeholder(tf.bool, name='is_training')
@@ -36,6 +38,7 @@ def get_pictures(Xd):
         im = cv2.imread('data_heap/' + Xd[i])
         images[i] = im
     assert not np.any(np.isnan(images))
+    images = images - mean_image
     return images
 
 def run_model(session, predict, loss_val, Xd, yd,
@@ -108,10 +111,10 @@ def train():
     with tf.Session() as sess:
         with tf.device("/cpu:0"):  # "/cpu:0" or "/gpu:0"
             data = pd.read_csv('227X227.csv')
+
             X_data = np.array(data['file_name'])
             y_data = np.array(data['Letter'])
-            mean_image = np.mean(X_data, axis=0)
-            X_data -= mean_image
+
             X_train = X_data[:55000]
 
             label_encoder = LabelEncoder()
@@ -119,7 +122,7 @@ def train():
 
             X_val = X_data[55000:]
             y_val = y_data[55000:]
-            
+
             sess.run(tf.global_variables_initializer())
             print('Training')
             run_model(sess, loss3_SLclassifier_1, total_loss, X_train, y_train, 1, 128, 100, train_step, True)
