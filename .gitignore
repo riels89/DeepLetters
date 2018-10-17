@@ -1,2 +1,6 @@
 __pycache__/
 TF-DeepHand-master/
+ph2014-dev-set-handshape-annotations/
+data/
+data_heap/
+DeepHand_test_images/

@@ -4,5 +4,5 @@ FROM bvlc/caffe:cpu
 add . /code
 workdir /code
 RUN pwd
-CMD ["python", "test.py"]
+# CMD ["python", "test.py"]
 

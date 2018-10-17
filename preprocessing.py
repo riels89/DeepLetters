@@ -34,7 +34,7 @@ def make_data_heap():
         for file in filenames:
             filepath = os.path.join(root, file)
             image = cv2.imread(filepath)
-            image_resized = cv2.resize(image, (128, 128))
+            image_resized = cv2.resize(image, (227, 227))
             new_loc = os.path.join('C:/Users/riley/DeepLetters/data_heap', file[0].lower() + str(letter_counts[file[0].lower()])) + '.jpg'
             cv2.imwrite(new_loc, image_resized)
             letter_counts[file[0].lower()] += 1
@@ -46,7 +46,7 @@ def make_data_heap():
                     filepath = os.path.join(root, file)
                     print(filepath)
                     image = cv2.imread(filepath)
-                    image_resized = cv2.resize(image, (128, 128))
+                    image_resized = cv2.resize(image, (227, 227))
                     new_loc = os.path.join('C:/Users/riley/DeepLetters/data_heap',
                                            filepath[43].lower() + str(letter_counts[filepath[43].lower()])) + '.jpg'
                     print(new_loc)
@@ -60,25 +60,37 @@ def make_data_heap():
                     filepath = os.path.join(root, file)
                     print(filepath)
                     image = cv2.imread(filepath)
-                    image_resized = cv2.resize(image, (128, 128))
+                    image_resized = cv2.resize(image, (227, 227))
                     new_loc = os.path.join('C:/Users/riley/DeepLetters/data_heap', file[6].lower() + str(letter_counts[file[6].lower()])) + '.jpg'
                     print(new_loc)
                     cv2.imwrite(new_loc, image_resized)
                     letter_counts[file[6].lower()] += 1
     print(letter_counts)
 
+
 def make_picture_list():
     picture_list = []
-    for root, dirnames, filenames in os.walk('C:/Users/riley/DeepLettersData/data_heap/128x128/'):
+    for root, dirnames, filenames in os.walk('C:/Users/riley/DeepLetters/data_heap/'):
         for file in filenames:
             if file[0] != 'j' and file[0] != 'z':
                 print(file)
                 picture_list.append({'file_name': file, 'Letter': file[0], 'Number': file[1:len(file) - 4]})
     picture_list = pd.DataFrame(picture_list)
     print(picture_list)
-    picture_list.to_csv('C:/Users/riley/DeepLettersData/data_heap/128X128.csv')
+    picture_list.to_csv('C:/Users/riley/DeepLetters/227X227.csv')
 
+#make_data_heap()
 make_picture_list()
 # videos = load_data('C:/Users/Riley/Documents/.Research Project/0', 1, symbols='ABCDEFGHIJKLMNOPQRSTUVWYXZ')
 
 # print(videos['A'][1][400, 400])
+    # letters = list('abcdefghijklmnopqrstuvwxyz')
+    # letter_counts = {letter: 0 for letter in letters}
+    # for root, dir, filenames in os.walk("C:/Users/riley/DeepLetters/Data/Dataset - Github sign language data (mon95)"):
+    #     for file in filenames:
+    #         filepath = os.path.join(root, file)
+    #         image = cv2.imread(filepath)
+    #         image_resized = cv2.resize(image, (227, 227))
+    #         new_loc = os.path.join('C:/Users/riley/DeepLetters/data_heap', file[0].lower() + str(letter_counts[file[0].lower()])) + '.jpg'
+    #         cv2.imwrite(new_loc, image_resized)
+    #         letter_counts[file[0].lower()] += 1
