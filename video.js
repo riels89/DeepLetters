@@ -1,38 +1,7 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<meta content="stuff, to, help, search, engines, not" name="keywords">
-<meta content="What this page is about." name="description">
-<meta content="Display Webcam Stream" name="title">
-<title>Display Webcam Stream</title>
-
-<style>
-#container {
-    margin: 0px auto;
-    width: 500px;
-    height: 375px;
-    border: 10px #333 solid;
-}
-#videoElement {
-    width: 500px;
-    height: 375px;
-    background-color: #666;
-}
-</style>
-</head>
-
-<body>
-<div id="container">
-    <video autoplay="true" id="videoElement">
-
-    </video>
-</div>
-<script>
 (function() {
 
   var streaming = false,
-    video = document.querySelector('#videoElement'),
+    video = document.querySelector('#video'),
     canvas = document.querySelector('#canvas'),
     buttoncontent = document.querySelector('#buttoncontent'),
     photo = document.querySelector('#photo'),
@@ -40,11 +9,7 @@
     width = 320,
     height = 0;
 
-  navigator.getMedia = (navigator.getUserMedia ||
-    navigator.webkitGetUserMedia ||
-    navigator.mozGetUserMedia ||
-    navigator.msGetUserMedia);
-
+  navigator.getMedia = (navigator.getUserMedia
   navigator.getMedia({
       video: true,
       audio: false
@@ -75,10 +40,10 @@
   }, false);
 
   function takepicture() {
-    video.style.display = "none";
+  	video.style.display = "none";
     canvas.style.display = "block";
     startbutton.innerText= "RETAKE";
-    canvas.width = width;
+  	canvas.width = width;
     canvas.height = height;
     canvas.getContext('2d').drawImage(video, 0, 0, width, height);
     var data = canvas.toDataURL('image/png');
@@ -86,22 +51,17 @@
   }
 
   startbutton.addEventListener('click', function(ev) {
-    if(startbutton.innerText==="CAPTURE")
+  	if(startbutton.innerText==="CAPTURE")
     {
-      takepicture();
+    	takepicture();
     }
     else
     {
-      video.style.display = "block";
-      canvas.style.display = "none";
+    	video.style.display = "block";
+    	canvas.style.display = "none";
       startbutton.innerText= "CAPTURE";
     }
     ev.preventDefault();
   }, false);
 
 })();
-
- 
-</script>
-</body>
-</html>
