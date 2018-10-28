@@ -4,3 +4,5 @@ ph2014-dev-set-handshape-annotations/
 data/
 data_heap/
 DeepHand_test_images/
+CNN/saved_model.pb
+CNN/saved_model.pbtxt
