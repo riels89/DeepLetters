@@ -12,8 +12,8 @@ import deepletters_cnn as model
 
 mean_image = np.load('CNN/mean_image.npy')
 
-X = tf.placeholder(tf.float32, shape=(None, 227, 227, 3), name='y')
-y = tf.placeholder(tf.int64, [None], name='y')
+X = tf.placeholder(tf.float32, shape=(None, 227, 227, 3), name='inputs')
+y = tf.placeholder(tf.int64, [None], name='labels')
 is_training = tf.placeholder(tf.bool, name='is_training')
 
 loss3_SLclassifier_1, loss2_SLclassifier_1, loss1_SLclassifier_1 = model.KitModel(weight_file ='auto_gen/weights.npy',
@@ -27,6 +27,10 @@ aux_loss1 = tf.losses.softmax_cross_entropy(tf.one_hot(y, 24), loss1_SLclassifie
 total_loss = real_loss + .3 * aux_loss2 + .3 * aux_loss1
 
 optimzer = tf.train.AdamOptimizer(learning_rate=1e-4)
+
+# have tensorflow compute accuracy
+correct_prediction = tf.equal(tf.argmax(loss3_SLclassifier_1, 1), y)
+accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
 extra_update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
 with tf.control_dependencies(extra_update_ops):
@@ -45,9 +49,6 @@ def run_model(session, predict, loss_val, Xd, yd,
               epochs=1, batch_size=64, print_every=100,
               training=None, plot_losses=False):
 
-    # have tensorflow compute accuracy
-    correct_prediction = tf.equal(tf.argmax(predict, 1), y)
-    accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
     # shuffle indicies
     train_indicies = np.arange(Xd.shape[0])
@@ -110,24 +111,41 @@ def train():
 
     with tf.Session() as sess:
         with tf.device("/cpu:0"):  # "/cpu:0" or "/gpu:0"
-            data = pd.read_csv('227X227.csv')
+            # tf.train.write_graph(sess.graph_def, 'CNN',
+            #          'saved_model.pbtxt', as_text=True)
+            clasification_signature = (
+            tf.saved_model.signature_def_utils.build_signature_def(
+            inputs = {}
+            )
+            )
 
-            X_data = np.array(data['file_name'])
-            y_data = np.array(data['Letter'])
+            builder = tf.saved_model.builder.SavedModelBuilder('CNN/saved_model.pb')
+            builder.add_meta_graph_and_variables(
+            sess,
+            [tag_constants.SERVING],
+            signature_def_map= {
+            'predict_images':
+            }
+            )
 
-            X_train = X_data[:55000]
-
-            label_encoder = LabelEncoder()
-            y_train = label_encoder.fit_transform(y_data[:55000])
-
-            X_val = X_data[55000:]
-            y_val = y_data[55000:]
-
-            sess.run(tf.global_variables_initializer())
-            print('Training')
-            run_model(sess, loss3_SLclassifier_1, total_loss, X_train, y_train, 1, 128, 100, train_step, True)
-            print('Validation')
-            run_model(sess, loss3_SLclassifier_1, total_loss, X_val, y_val, 1, 128)
+            # data = pd.read_csv('227X227.csv')
+            #
+            # X_data = np.array(data['file_name'])
+            # y_data = np.array(data['Letter'])
+            #
+            # X_train = X_data[:55000]
+            #
+            # label_encoder = LabelEncoder()
+            # y_train = label_encoder.fit_transform(y_data[:55000])
+            #
+            # X_val = X_data[55000:]
+            # y_val = y_data[55000:]
+            #
+            # sess.run(tf.global_variables_initializer())
+            # print('Training')
+            # run_model(sess, loss3_SLclassifier_1, total_loss, X_train, y_train, 1, 128, 100, train_step, True)
+            # print('Validation')
+            # run_model(sess, loss3_SLclassifier_1, total_loss, X_val, y_val, 1, 128)
 
 # data = pd.read_csv('C:/Users/Riley/DeepLettersData/data_heap/128X128.csv')
 # X_train = np.array(data['file_name'])[:64]
