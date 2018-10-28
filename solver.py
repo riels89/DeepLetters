@@ -20,6 +20,8 @@ loss3_SLclassifier_1, loss2_SLclassifier_1, loss1_SLclassifier_1 = model.KitMode
                                                                                         X=X, is_training=True)
 #mean_loss = tf.losses.softmax_cross_entropy(tf.one_hot(y, 24), y_out)
 
+values, indices = tf.nn.top_k(loss3_SLclassifier_1, 24)
+
 real_loss = tf.losses.softmax_cross_entropy(tf.one_hot(y, 24), loss3_SLclassifier_1)
 aux_loss2 = tf.losses.softmax_cross_entropy(tf.one_hot(y, 24), loss2_SLclassifier_1)
 aux_loss1 = tf.losses.softmax_cross_entropy(tf.one_hot(y, 24), loss1_SLclassifier_1)
@@ -113,21 +115,55 @@ def train():
         with tf.device("/cpu:0"):  # "/cpu:0" or "/gpu:0"
             # tf.train.write_graph(sess.graph_def, 'CNN',
             #          'saved_model.pbtxt', as_text=True)
-            clasification_signature = (
-            tf.saved_model.signature_def_utils.build_signature_def(
-            inputs = {}
-            )
-            )
+            sess.run(tf.global_variables_initializer())
 
-            builder = tf.saved_model.builder.SavedModelBuilder('CNN/saved_model.pb')
+            tensor_info_x = tf.saved_model.utils.build_tensor_info(X)
+            tensor_info_y = tf.saved_model.utils.build_tensor_info(loss3_SLclassifier_1)
+            
+            table = tf.contrib.lookup.index_to_string_table_from_tensor(
+                tf.constant(np.array(list('abcdefghiklmnopqrstuvwxy'))))
+
+            classification_inputs = tf.saved_model.utils.build_tensor_info(
+                  X)
+            classification_outputs_classes = tf.saved_model.utils.build_tensor_info(
+                  table.lookup(tf.to_int64(indices)))
+            classification_outputs_scores = tf.saved_model.utils.build_tensor_info(values)
+
+            classification_signature = (
+                tf.saved_model.signature_def_utils.build_signature_def(
+                inputs={
+                tf.saved_model.signature_constants.CLASSIFY_INPUTS:
+                      classification_inputs
+              },
+              outputs={
+                  tf.saved_model.signature_constants.CLASSIFY_OUTPUT_CLASSES:
+                      classification_outputs_classes,
+                  tf.saved_model.signature_constants.CLASSIFY_OUTPUT_SCORES:
+                      classification_outputs_scores
+              },
+              method_name=tf.saved_model.signature_constants.CLASSIFY_METHOD_NAME))
+              
+            prediction_signature = (
+                  tf.saved_model.signature_def_utils.build_signature_def(
+                      inputs={'images': tensor_info_x},
+                      outputs={'scores': tensor_info_y},
+                      method_name=tf.saved_model.signature_constants.PREDICT_METHOD_NAME))
+
+
+            builder = tf.saved_model.builder.SavedModelBuilder('CNN/saved_model_v1.pb')
             builder.add_meta_graph_and_variables(
             sess,
-            [tag_constants.SERVING],
+            [tf.saved_model.tag_constants.SERVING],
             signature_def_map= {
-            'predict_images':
-            }
-            )
-
+                'train':
+                    prediction_signature,
+                tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY:
+                    classification_signature,
+                },
+            main_op=tf.tables_initializer(),
+            strip_default_attrs=True)
+            
+            builder.save()
             # data = pd.read_csv('227X227.csv')
             #
             # X_data = np.array(data['file_name'])
