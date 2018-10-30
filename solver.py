@@ -10,33 +10,36 @@ import sys
 sys.path.append('CNN')
 import deepletters_cnn as model
 
-mean_image = np.load('CNN/mean_image.npy')
 
-X = tf.placeholder(tf.float32, shape=(None, 227, 227, 3), name='inputs')
-y = tf.placeholder(tf.int64, [None], name='labels')
-is_training = tf.placeholder(tf.bool, name='is_training')
+def create_graph(learning_rate=1e-2):
 
-loss3_SLclassifier_1, loss2_SLclassifier_1, loss1_SLclassifier_1 = model.KitModel(weight_file ='auto_gen/weights.npy',
-                                                                                        X=X, is_training=True)
-#mean_loss = tf.losses.softmax_cross_entropy(tf.one_hot(y, 24), y_out)
+    mean_image = np.load('CNN/mean_image.npy')
 
-values, indices = tf.nn.top_k(loss3_SLclassifier_1, 24)
+    X = tf.placeholder(tf.float32, shape=(None, 227, 227, 3), name='inputs')
+    y = tf.placeholder(tf.int64, [None], name='labels')
+    is_training = tf.placeholder(tf.bool, name='is_training')
 
-real_loss = tf.losses.softmax_cross_entropy(tf.one_hot(y, 24), loss3_SLclassifier_1)
-aux_loss2 = tf.losses.softmax_cross_entropy(tf.one_hot(y, 24), loss2_SLclassifier_1)
-aux_loss1 = tf.losses.softmax_cross_entropy(tf.one_hot(y, 24), loss1_SLclassifier_1)
+    loss3_SLclassifier_1, loss2_SLclassifier_1, loss1_SLclassifier_1 = model.KitModel(weight_file ='auto_gen/weights.npy',
+                                                                                            X=X, is_training=True)
+    #mean_loss = tf.losses.softmax_cross_entropy(tf.one_hot(y, 24), y_out)
 
-total_loss = real_loss + .3 * aux_loss2 + .3 * aux_loss1
+    values, indices = tf.nn.top_k(loss3_SLclassifier_1, 24)
 
-optimzer = tf.train.AdamOptimizer(learning_rate=1e-4)
+    real_loss = tf.losses.softmax_cross_entropy(tf.one_hot(y, 24), loss3_SLclassifier_1)
+    aux_loss2 = tf.losses.softmax_cross_entropy(tf.one_hot(y, 24), loss2_SLclassifier_1)
+    aux_loss1 = tf.losses.softmax_cross_entropy(tf.one_hot(y, 24), loss1_SLclassifier_1)
 
-# have tensorflow compute accuracy
-correct_prediction = tf.equal(tf.argmax(loss3_SLclassifier_1, 1), y)
-accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+    total_loss = real_loss + .3 * aux_loss2 + .3 * aux_loss1
 
-extra_update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-with tf.control_dependencies(extra_update_ops):
-    train_step = optimzer.minimize(total_loss)
+    optimzer = tf.train.AdamOptimizer(learning_rate=learning_rate)
+
+    # have tensorflow compute accuracy
+    correct_prediction = tf.equal(tf.argmax(loss3_SLclassifier_1, 1), y)
+    accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+
+    extra_update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+    with tf.control_dependencies(extra_update_ops):
+        train_step = optimzer.minimize(total_loss)
 
 def get_pictures(Xd):
     images = np.empty((Xd.shape[0], 227, 227, 3))
@@ -112,76 +115,85 @@ def run_model(session, predict, loss_val, Xd, yd,
 def train():
 
     with tf.Session() as sess:
-        with tf.device("/cpu:0"):  # "/cpu:0" or "/gpu:0"
+        with tf.device("/gpu:0"):  # "/cpu:0" or "/gpu:0"
+            learning_rate = [1e-1, 1e-2, 1e-3, 1e-4, 1e-5]
+
             # tf.train.write_graph(sess.graph_def, 'CNN',
             #          'saved_model.pbtxt', as_text=True)
-            sess.run(tf.global_variables_initializer())
-
-            tensor_info_x = tf.saved_model.utils.build_tensor_info(X)
-            tensor_info_y = tf.saved_model.utils.build_tensor_info(loss3_SLclassifier_1)
-            
-            table = tf.contrib.lookup.index_to_string_table_from_tensor(
-                tf.constant(np.array(list('abcdefghiklmnopqrstuvwxy'))))
-
-            classification_inputs = tf.saved_model.utils.build_tensor_info(
-                  X)
-            classification_outputs_classes = tf.saved_model.utils.build_tensor_info(
-                  table.lookup(tf.to_int64(indices)))
-            classification_outputs_scores = tf.saved_model.utils.build_tensor_info(values)
-
-            classification_signature = (
-                tf.saved_model.signature_def_utils.build_signature_def(
-                inputs={
-                tf.saved_model.signature_constants.CLASSIFY_INPUTS:
-                      classification_inputs
-              },
-              outputs={
-                  tf.saved_model.signature_constants.CLASSIFY_OUTPUT_CLASSES:
-                      classification_outputs_classes,
-                  tf.saved_model.signature_constants.CLASSIFY_OUTPUT_SCORES:
-                      classification_outputs_scores
-              },
-              method_name=tf.saved_model.signature_constants.CLASSIFY_METHOD_NAME))
-              
-            prediction_signature = (
-                  tf.saved_model.signature_def_utils.build_signature_def(
-                      inputs={'images': tensor_info_x},
-                      outputs={'scores': tensor_info_y},
-                      method_name=tf.saved_model.signature_constants.PREDICT_METHOD_NAME))
-
-
-            builder = tf.saved_model.builder.SavedModelBuilder('CNN/saved_model_v1.pb')
-            builder.add_meta_graph_and_variables(
-            sess,
-            [tf.saved_model.tag_constants.SERVING],
-            signature_def_map= {
-                'train':
-                    prediction_signature,
-                tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY:
-                    classification_signature,
-                },
-            main_op=tf.tables_initializer(),
-            strip_default_attrs=True)
-            
-            builder.save()
-            # data = pd.read_csv('227X227.csv')
-            #
-            # X_data = np.array(data['file_name'])
-            # y_data = np.array(data['Letter'])
-            #
-            # X_train = X_data[:55000]
-            #
-            # label_encoder = LabelEncoder()
-            # y_train = label_encoder.fit_transform(y_data[:55000])
-            #
-            # X_val = X_data[55000:]
-            # y_val = y_data[55000:]
-            #
             # sess.run(tf.global_variables_initializer())
-            # print('Training')
-            # run_model(sess, loss3_SLclassifier_1, total_loss, X_train, y_train, 1, 128, 100, train_step, True)
-            # print('Validation')
-            # run_model(sess, loss3_SLclassifier_1, total_loss, X_val, y_val, 1, 128)
+            #
+            # tensor_info_x = tf.saved_model.utils.build_tensor_info(X)
+            # tensor_info_y = tf.saved_model.utils.build_tensor_info(loss3_SLclassifier_1)
+            #
+            # table = tf.contrib.lookup.index_to_string_table_from_tensor(
+            #     tf.constant(np.array(list('abcdefghiklmnopqrstuvwxy'))))
+            #
+            # classification_inputs = tf.saved_model.utils.build_tensor_info(
+            #       X)
+            # classification_outputs_classes = tf.saved_model.utils.build_tensor_info(
+            #       table.lookup(tf.to_int64(indices)))
+            # classification_outputs_scores = tf.saved_model.utils.build_tensor_info(values)
+            #
+            # classification_signature = (
+            #     tf.saved_model.signature_def_utils.build_signature_def(
+            #     inputs={
+            #     tf.saved_model.signature_constants.CLASSIFY_INPUTS:
+            #           classification_inputs
+            #   },
+            #   outputs={
+            #       tf.saved_model.signature_constants.CLASSIFY_OUTPUT_CLASSES:
+            #           classification_outputs_classes,
+            #       tf.saved_model.signature_constants.CLASSIFY_OUTPUT_SCORES:
+            #           classification_outputs_scores
+            #   },
+            #   method_name=tf.saved_model.signature_constants.CLASSIFY_METHOD_NAME))
+            #
+            # prediction_signature = (
+            #       tf.saved_model.signature_def_utils.build_signature_def(
+            #           inputs={'images': tensor_info_x},
+            #           outputs={'scores': tensor_info_y},
+            #           method_name=tf.saved_model.signature_constants.PREDICT_METHOD_NAME))
+            #
+            #
+            # builder = tf.saved_model.builder.SavedModelBuilder('CNN/saved_model_v1.pb')
+            # builder.add_meta_graph_and_variables(
+            # sess,
+            # [tf.saved_model.tag_constants.SERVING],
+            # signature_def_map= {
+            #     'train':
+            #         prediction_signature,
+            #     tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY:
+            #         classification_signature,
+            #     },
+            # main_op=tf.tables_initializer(),
+            # strip_default_attrs=True)
+            #
+            # builder.save()
+            data = pd.read_csv('227X227.csv')
+
+            X_data = np.array(data['file_name'])
+            y_data = np.array(data['Letter'])
+
+            X_train = X_data[:55000]
+
+            label_encoder = LabelEncoder()
+            y_train = label_encoder.fit_transform(y_data[:55000])
+
+            X_val = X_data[55000:]
+            y_val = y_data[55000:]
+
+            for lr in learning_rate:
+                create_graph(lr)
+
+                saver = tf.train.Saver()
+                sess.run(tf.global_variables_initializer())
+
+                print('Training')
+                run_model(sess, loss3_SLclassifier_1, total_loss, X_train, y_train, 1000, 128, 100, train_step, True)
+                saver.save(sess, "CNN/trained_networks/static_v1.ckpt")
+
+                print('Validation')
+                run_model(sess, loss3_SLclassifier_1, total_loss, X_val, y_val, 1, 128)
 
 # data = pd.read_csv('C:/Users/Riley/DeepLettersData/data_heap/128X128.csv')
 # X_train = np.array(data['file_name'])[:64]
