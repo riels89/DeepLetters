@@ -19,6 +19,23 @@
     height: 375px;
     background-color: #666;
 }
+
+#startbutton {
+  position: absolute;
+  width: 40.78%;
+  height: 10%;
+  margin-left: 29%;
+  margin-right: 30%;
+
+}
+
+#canvas {
+  position: absolute;
+  top: 3%;
+  left: 30.45%;
+  width: 500px;
+  height: 375px;
+}
 </style>
 </head>
 
@@ -28,6 +45,8 @@
 
     </video>
 </div>
+<button id="startbutton">CAPTURE</button>
+<canvas id="canvas" width="150" height="100"></canvas>
 <script>
 (function() {
 
@@ -78,17 +97,19 @@
     video.style.display = "none";
     canvas.style.display = "block";
     startbutton.innerText= "RETAKE";
-    canvas.width = width;
-    canvas.height = height;
     canvas.getContext('2d').drawImage(video, 0, 0, width, height);
     var data = canvas.toDataURL('image/png');
     photo.setAttribute('src', data);
+    canvas.toBlob(res, 'image/jpeg'); //Request blob from canvas
+
   }
 
   startbutton.addEventListener('click', function(ev) {
     if(startbutton.innerText==="CAPTURE")
     {
-      takepicture();
+      takepicture()
+        // .then(download);
+
     }
     else
     {
@@ -100,7 +121,37 @@
   }, false);
 
 })();
+var xhr = new XMLHttpRequest();
 
+xhr.open("POST", "something.jpg", false);
+xhr.setRequestHeader("Authorization", "CloudSight [key]");
+
+xhr.send("http://api.cloudsightapi.com/image_requests");
+
+console.log(xhr.status);
+console.log(xhr.statusText);
+// function download(blob){
+//   let a = document.createElement('a');
+//   a.href = URL.createObjectURL(blob);
+//   a.download = 'screenshot.jpg';
+//   document.body.appendChild(a);
+//   a.click();
+// }
+// saveBlobAsFile(blob, fileName) {
+//
+//     var reader = new FileReader();
+//
+//     reader.onloadend = function () {
+//         var base64 = reader.result ;
+//         var link = document.createElement("a");
+//
+//         link.setAttribute("href", base64);
+//         link.setAttribute("download", fileName);
+//         link.click();
+//     };
+//
+//     reader.readAsDataURL(blob);
+// }
  
 </script>
 </body>
