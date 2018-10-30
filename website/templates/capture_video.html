@@ -129,6 +129,12 @@
   }, false);
 
 })();
+var xhr = new XMLHttpRequest();
+
+xhr.open("POST", "something.jpg", false);
+xhr.setRequestHeader("Authorization", "CloudSight [key]");
+
+xhr.send("http://api.cloudsightapi.com/image_requests");
 
 // function download(blob){
 //   let a = document.createElement('a');
