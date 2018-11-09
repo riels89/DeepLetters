@@ -1,26 +1,32 @@
-import tensorflow as tf
 from matplotlib import pyplot as plt
 import pandas as pd
 import numpy as np
-from model import model
 import cv2
 import math
 from sklearn.preprocessing import LabelEncoder
 import sys
+import os
+import random
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+import tensorflow as tf
+import logging
+
 sys.path.append('CNN')
 import deepletters_cnn as model
+#tf.logging.set_verbosity(tf.logging.ERROR)
 
+glr = 0
 
-def create_graph(learning_rate=1e-2):
+mean_image = np.load('CNN/mean_image.npy')
 
-    mean_image = np.load('CNN/mean_image.npy')
+def create_graph(learning_rate=1e-2, is_training=False):
+
 
     X = tf.placeholder(tf.float32, shape=(None, 227, 227, 3), name='inputs')
     y = tf.placeholder(tf.int64, [None], name='labels')
-    is_training = tf.placeholder(tf.bool, name='is_training')
 
     loss3_SLclassifier_1, loss2_SLclassifier_1, loss1_SLclassifier_1 = model.KitModel(weight_file ='auto_gen/weights.npy',
-                                                                                            X=X, is_training=True)
+                                                                                            X=X, is_training=is_training)
     #mean_loss = tf.losses.softmax_cross_entropy(tf.one_hot(y, 24), y_out)
 
     values, indices = tf.nn.top_k(loss3_SLclassifier_1, 24)
@@ -40,11 +46,15 @@ def create_graph(learning_rate=1e-2):
     extra_update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
     with tf.control_dependencies(extra_update_ops):
         train_step = optimzer.minimize(total_loss)
-
-def get_pictures(Xd):
+    return loss3_SLclassifier_1, total_loss, train_step, correct_prediction, accuracy, X, y
+def get_pictures(Xd, location):
     images = np.empty((Xd.shape[0], 227, 227, 3))
+    print(Xd.shape[0])
     for i in range(Xd.shape[0]):
-        im = cv2.imread('data_heap/' + Xd[i])
+        im = cv2.imread(location[i] + "/" + Xd[i])
+        if random.random() < .5:
+            im = cv2.flip(im, 0)
+        #print(location[i] + "/" + Xd[i])
         images[i] = im
     assert not np.any(np.isnan(images))
     images = images - mean_image
@@ -52,7 +62,8 @@ def get_pictures(Xd):
 
 def run_model(session, predict, loss_val, Xd, yd,
               epochs=1, batch_size=64, print_every=100,
-              training=None, plot_losses=False):
+              training=None, plot_losses=False,
+              correct_prediction=None, accuracy=None, X=None, y=None, location=None):
 
 
     # shuffle indicies
@@ -63,7 +74,7 @@ def run_model(session, predict, loss_val, Xd, yd,
 
     # setting up variables we want to compute (and optimizing)
     # if we have a training function, add that to things we compute
-    variables = [total_loss, correct_prediction, accuracy]
+    variables = [loss_val, correct_prediction, accuracy]
     if training_now:
         variables[-1] = training
 
@@ -80,9 +91,8 @@ def run_model(session, predict, loss_val, Xd, yd,
             idx = train_indicies[start_idx:start_idx + batch_size]
 
             # create a feed dictionary for this batch
-            feed_dict = {X: get_pictures(Xd[idx]),
-                         y: yd[idx],
-                         is_training: training_now}
+            feed_dict = {X: get_pictures(Xd[idx], location[idx]),
+                         y: yd[idx]}
             # get batch size
             actual_batch_size = yd[idx].shape[0]
 
@@ -97,25 +107,31 @@ def run_model(session, predict, loss_val, Xd, yd,
 
             # print every now and then
             if training_now and (iter_cnt % print_every) == 0:
-                print("Iteration " + str(iter_cnt) + ": with minibatch training loss = " + str(loss) + " and accuracy of " + str(np.sum(corr) / actual_batch_size))
+                logging.info("Iteration " + str(iter_cnt) + ": with minibatch training loss = " + str(loss) + " and accuracy of " + str(np.sum(corr) / actual_batch_size))
 
             iter_cnt += 1
         total_correct = correct / Xd.shape[0]
         epoch_loss = np.sum(losses) / Xd.shape[0]
-        print("Epoch " + str(e + 1) + ", Overall loss = " + str(epoch_loss) + " and accuracy of " + str(total_correct))
-        if plot_losses:
+        myfile.write("appended text")
+        logging.info("Epoch " + str(e + 1) + ", Overall loss = " + str(epoch_loss) + " and accuracy of " + str(total_correct))
+        if plot_losses and e == 999:
             plt.plot(losses)
             plt.grid(True)
             plt.title('Epoch {} Loss'.format(e + 1))
             plt.xlabel('minibatch number')
             plt.ylabel('minibatch loss')
-            plt.show()
+            if training_now is True:
+                plt.savefig("CNN/trained_networks/static_v1_lr-" + str(glr) +"/static_v1_lr-" + str(glr) +"-TRAIN.png")
+            else:
+                plt.savefig("CNN/trained_networks/static_v1_lr-" + str(glr) +"/static_v1_lr-" + str(glr) + "-VAL.png")
+            #plt.show()
     return epoch_loss, total_correct
 
 def train():
 
-    with tf.Session() as sess:
-        with tf.device("/gpu:0"):  # "/cpu:0" or "/gpu:0"
+    with tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)) as sess:
+
+        with tf.device("/cpu:0"):  # "/cpu:0" or "/gpu:0"
             learning_rate = [1e-1, 1e-2, 1e-3, 1e-4, 1e-5]
 
             # tf.train.write_graph(sess.graph_def, 'CNN',
@@ -173,27 +189,41 @@ def train():
 
             X_data = np.array(data['file_name'])
             y_data = np.array(data['Letter'])
+            location = np.array(data['dir_name'])
 
-            X_train = X_data[:55000]
+            X_train = np.hstack((X_data[:55000], X_data[65773:]))
 
             label_encoder = LabelEncoder()
-            y_train = label_encoder.fit_transform(y_data[:55000])
+            y_train = label_encoder.fit_transform(np.hstack((y_data[:55000], y_data[65773:])))
+            train_loc = np.hstack((location[:55000], location[65773:]))
 
-            X_val = X_data[55000:]
-            y_val = y_data[55000:]
+
+            X_val = X_data[55000:65773]
+            y_val = label_encoder.fit_transform(y_data[55000:65773])
+            val_loc = location[55000:65773]
 
             for lr in learning_rate:
-                create_graph(lr)
+                global glr
+                glr = lr
+                os.mkdir("CNN/trained_networks/static_v1_lr-" + str(lr))
+
+                logging.basicConfig(level=logging.DEBUG, filename="CNN/trained_networks/static_v1_lr-" + str(lr) + "/static_v1_lr-" + str(lr) + ".txt", filemode="a+",
+                        format="%(asctime)-15s %(levelname)-8s %(message)s")
+
+                loss3_SLclassifier_1, total_loss, train_step, correct_prediction, accuracy, X, y = create_graph(lr, True)
 
                 saver = tf.train.Saver()
                 sess.run(tf.global_variables_initializer())
+                logging.info('Training')
 
-                print('Training')
-                run_model(sess, loss3_SLclassifier_1, total_loss, X_train, y_train, 1000, 128, 100, train_step, True)
-                saver.save(sess, "CNN/trained_networks/static_v1.ckpt")
+                run_model(sess, loss3_SLclassifier_1, total_loss, X_train, y_train, 1, 128, 100, train_step, True, correct_prediction, accuracy, X, y, train_loc)
+                saver.save(sess, "CNN/trained_networks/static_v1_lr-" + str(lr) + "/static_v1_lr-" + str(lr) + ".ckpt")
 
-                print('Validation')
-                run_model(sess, loss3_SLclassifier_1, total_loss, X_val, y_val, 1, 128)
+                logging.info('Validation')
+                #loss3_SLclassifier_1, total_loss, train_step, correct_prediction, accuracy, X, y = create_graph(lr, False)
+                run_model(sess, predict=loss3_SLclassifier_1, loss_val=total_loss, Xd=X_val, yd=y_val,
+                          epochs=1, batch_size=128, print_every=100, training=None, plot_losses=True,
+                          correct_prediction=correct_prediction, accuracy=accuracy, X=X, y=y, location=val_loc)
 
 # data = pd.read_csv('C:/Users/Riley/DeepLettersData/data_heap/128X128.csv')
 # X_train = np.array(data['file_name'])[:64]
