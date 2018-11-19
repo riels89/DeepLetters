@@ -130,7 +130,10 @@ def KitModel(weight_file = None, X=None, is_training=False):
     inception_4c_relu_pool_proj = tf.nn.relu(inception_4c_pool_proj, name = 'inception_4c/relu_pool_proj')
     inception_4c_3x3_pad = tf.pad(inception_4c_relu_3x3_reduce, paddings = [[0, 0], [1, 1], [1, 1], [0, 0]])
     inception_4c_3x3 = convolution(inception_4c_3x3_pad, group=1, strides=[1, 1], padding='VALID', name='inception_4c/3x3')
-    loss1_SLclassifier_1 = tf.layers.dense(loss1_SLclassifier_0, 61, kernel_initializer = tf.constant_initializer(__weights_dict['loss1/SLclassifier_1']['weights']), bias_initializer = tf.constant_initializer(__weights_dict['loss1/SLclassifier_1']['bias']), use_bias = True)
+    loss1_SLclassifier_1 = tf.layers.dense(loss1_SLclassifier_0, 61,
+                                           kernel_initializer=tf.constant_initializer(__weights_dict['loss1/SLclassifier_1']['weights']),
+                                           bias_initializer = tf.constant_initializer(__weights_dict['loss1/SLclassifier_1']['bias']), use_bias = True,
+                                           name='incpeption_4c/FC1')
     inception_4c_relu_5x5 = tf.nn.relu(inception_4c_5x5, name = 'inception_4c/relu_5x5')
     inception_4c_relu_3x3 = tf.nn.relu(inception_4c_3x3, name = 'inception_4c/relu_3x3')
     inception_4c_output = tf.concat([inception_4c_relu_1x1, inception_4c_relu_3x3, inception_4c_relu_5x5, inception_4c_relu_pool_proj], 3, name = 'inception_4c/output')
@@ -187,7 +190,10 @@ def KitModel(weight_file = None, X=None, is_training=False):
     inception_5a_relu_5x5_reduce = tf.nn.relu(inception_5a_5x5_reduce, name = 'inception_5a/relu_5x5_reduce')
     inception_5a_pool_proj = convolution(inception_5a_pool, group=1, strides=[1, 1], padding='VALID', name='inception_5a/pool_proj')
     inception_5a_relu_3x3_reduce = tf.nn.relu(inception_5a_3x3_reduce, name = 'inception_5a/relu_3x3_reduce')
-    loss2_SLclassifier_1 = tf.layers.dense(loss2_SLclassifier_0, 61, kernel_initializer = tf.constant_initializer(__weights_dict['loss2/SLclassifier_1']['weights']), bias_initializer = tf.constant_initializer(__weights_dict['loss2/SLclassifier_1']['bias']), use_bias = True)
+    loss2_SLclassifier_1 = tf.layers.dense(loss2_SLclassifier_0, 61,
+                                           kernel_initializer=tf.constant_initializer(__weights_dict['loss2/SLclassifier_1']['weights']),
+                                           bias_initializer = tf.constant_initializer(__weights_dict['loss2/SLclassifier_1']['bias']), use_bias = True,
+                                           name='inception_5a/FC')
     inception_5a_5x5_pad = tf.pad(inception_5a_relu_5x5_reduce, paddings = [[0, 0], [2, 2], [2, 2], [0, 0]])
     inception_5a_5x5 = convolution(inception_5a_5x5_pad, group=1, strides=[1, 1], padding='VALID', name='inception_5a/5x5')
     inception_5a_relu_pool_proj = tf.nn.relu(inception_5a_pool_proj, name = 'inception_5a/relu_pool_proj')
@@ -215,7 +221,10 @@ def KitModel(weight_file = None, X=None, is_training=False):
     inception_5b_output = tf.concat([inception_5b_relu_1x1, inception_5b_relu_3x3, inception_5b_relu_5x5, inception_5b_relu_pool_proj], 3, name = 'inception_5b/output')
     pool5_7x7_s1    = tf.nn.avg_pool(inception_5b_output, [1, 7, 7, 1], [1, 1, 1, 1], padding='VALID', name='pool5/7x7_s1')
     loss3_SLclassifier_0 = tf.contrib.layers.flatten(pool5_7x7_s1)
-    loss3_SLclassifier_1 = tf.layers.dense(loss3_SLclassifier_0, 61, kernel_initializer = tf.constant_initializer(__weights_dict['loss3/SLclassifier_1']['weights']), bias_initializer = tf.constant_initializer(__weights_dict['loss3/SLclassifier_1']['bias']), use_bias = True)
+    loss3_SLclassifier_1 = tf.layers.dense(loss3_SLclassifier_0, 61,
+                                           kernel_initializer=tf.constant_initializer(__weights_dict['loss3/SLclassifier_1']['weights']),
+                                           bias_initializer = tf.constant_initializer(__weights_dict['loss3/SLclassifier_1']['bias']), use_bias=True,
+                                           name='inception_5b/FC')
     prob_3            = tf.nn.softmax(loss3_SLclassifier_1, name = 'prob3')
     prob_2            = tf.nn.softmax(loss2_SLclassifier_1, name = 'prob2')
     prob_1            = tf.nn.softmax(loss1_SLclassifier_1, name = 'prob1')

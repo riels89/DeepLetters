@@ -10,8 +10,9 @@ app = Flask(__name__)
 @app.route('/', methods=['GET', 'POST'])
 def capture_video():
     if request.method == 'POST':
-        json_data = request.get_json(force=True)
-        run_net.analyze(json_data['image'])
+        image = request.files
+        print(image, sys.stderr)
+        run_net.analyze()
 
     else:
         if request.args.get('prediction') is not None:

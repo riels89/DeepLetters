@@ -79,12 +79,12 @@ def make_picture_list():
         for file in filenames:
             if file[0] != 'j' and file[0] != 'z':
                 print(file)
-                picture_list.append({'dir_name': dirnames, 'file_name': file, 'Letter': file[0], 'Number': file[1:len(file) - 4]})
+                picture_list.append({'dir_name': root, 'file_name': file, 'Letter': file[0], 'Number': file[1:len(file) - 4]})
     picture_list = pd.DataFrame(picture_list)
     print(picture_list)
     picture_list.to_csv('C:/Users/riley/DeepLetters/227X227.csv')
 
-make_data_heap()
+#make_data_heap()
 make_picture_list()
 # videos = load_data('C:/Users/Riley/Documents/.Research Project/0', 1, symbols='ABCDEFGHIJKLMNOPQRSTUVWYXZ')
 

@@ -41,23 +41,15 @@
 
 <body>
 <div id="container">
-    <video autoplay="true" id="videoElement"> </video>
+    <video autoplay="true" id="videoElement">  </video>
 </div>
 <button id="startbutton">CAPTURE</button>
 <canvas id="canvas" width="150" height="100"></canvas>
 
 <form method="POST" enctype="multipart/form-data" id="myForm">
-        <table>
-            <tr>
-                <td>Name/EmailId</td>
-                <td>:  <input type="text" name="userID"></td>
-            </tr>
 
-        </table>
     </form>
-
 <script>
-
 (function() {
 
   var streaming = false,
@@ -110,16 +102,19 @@
     canvas.getContext('2d').drawImage(video, 0, 0, width, height);
     var data = canvas.toDataURL('image/png');
     photo.setAttribute('src', data);
-    canvas.toBlob(res, 'image/jpeg'); //Request blob from canvas
-    var image = document.getElementById('image').src;
-    var form = document.getElementById('myForm');
-    var formData = new FormData(form);
-    formData.append("file", image);
+    //canvas.toBlob(res, 'image/jpeg'); //Request blob from canvas
+
     var xmlhttp = new XMLHttpRequest();
-    xmlhttp.open("POST", "/");
-    xmlhttp.send(formData);
-    console.log(formData.get('file'));
-    console.log(formData.get('userID'));
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xmlhttp.open("POST", "/", true);
+    xmlhttp.send(data);
+    // check when state changes,
+    xmlhttp.onreadystatechange = function() {
+
+    if(xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+        alert(xmlhttp.responseText);
+         }
+     }
 
   }
 
@@ -128,15 +123,7 @@
     {
       takepicture()
         // .then(download);
-      var xhr = new XMLHttpRequest();
 
-      xhr.open("POST", "http://localhost:8080/", false);
-      xhr.setRequestHeader("Authorization", "CloudSight [key]");
-
-      xhr.send("image=h");
-
-      console.log(xhr.status);
-      console.log(xhr.statusText);
     }
     else
     {
@@ -148,25 +135,15 @@
   }, false);
 
 })();
-<<<<<<< Updated upstream:website/templates/capture_video.html
-var xhr = new XMLHttpRequest();
-
-xhr.open("POST", "something.jpg", false);
-xhr.setRequestHeader("Authorization", "CloudSight [key]");
-
-xhr.send("http://api.cloudsightapi.com/image_requests");
-
-=======
 // var xhr = new XMLHttpRequest();
-// var formData = new formData()
-// xhr.open("POST", data, false);
-// xhr.setRequestHeader("Content-Type: image/png" );
+//
+// xhr.open("POST", "something.jpg", false);
+// xhr.setRequestHeader("Authorization", "CloudSight [key]");
 //
 // xhr.send("http://api.cloudsightapi.com/image_requests");
 //
 // console.log(xhr.status);
 // console.log(xhr.statusText);
->>>>>>> Stashed changes:website/capture_video.html
 // function download(blob){
 //   let a = document.createElement('a');
 //   a.href = URL.createObjectURL(blob);
