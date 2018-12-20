@@ -159,6 +159,7 @@ class PhotoBoothApp:
         #self.text.tag_add("here", "1.0", "1.4")
 
     def start(self):
+        print(self.frameSize)
         self.filename = "videos/" + self.current_word + ".mp4"
         self.video_out = cv2.VideoWriter(self.filename, self.video_writer, 60, self.frameSize)
         self.recording = True
@@ -214,9 +215,11 @@ if __name__=='__main__':
     # initialize the video stream and allow the camera sensor to warmup
     print("[INFO] warming up camera...")
     cap = cv2.VideoCapture(0)
-    width = cap.get(3)  # float
-    height = cap.get(4) # float
+    width = int(cap.get(3))  # float
+    height = int(cap.get(4)) # float
 
+    print("width: " + str(width))
+    print("height: " + str(height))
     cap.release()
 
     time.sleep(2.0)
