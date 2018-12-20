@@ -203,9 +203,9 @@ def train(resume=False):
     train_loc = location[:100]
 
     #65773
-    X_val = X_data[55000:65773]
-    y_val = label_encoder.fit_transform(y_data[55000:65773])
-    val_loc = location[55000:65773]
+    X_val = X_data[52995:65773]
+    y_val = label_encoder.fit_transform(y_data[52995:65773])
+    val_loc = location[52995:65773]
 
     for lr in learning_rate:
         with tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)) as sess:
