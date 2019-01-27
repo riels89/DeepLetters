@@ -64,7 +64,9 @@ def create_graph(learning_rate=1e-2, mode="testing"):
         inception_5b_3x3 = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, 'inception_5b/3x3')
         inception_5b_5x5 = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, 'inception_5b/5x5')
 
-        train_step = optimzer.minimize(total_loss, var_list=[FC1, FC2, FC3])
+        train_step = optimzer.minimize(total_loss, var_list=[FC1, FC2, FC3, loss1_fc_1, loss2_fc_1, inception_5a_5x5, inception_5a_3x3, inception_5b_3x3_reduce,
+                                       inception_5b_5x5_reduce, inception_5b_1x1, inception_5b_pool_proj, inception_5b_3x3, inception_5b_5x5])
+                                       
     return loss3_SLclassifier_1, total_loss, train_step, correct_prediction, accuracy, X, y
 def get_pictures(Xd, location):
     images = np.empty((Xd.shape[0], 227, 227, 3))
