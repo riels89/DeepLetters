@@ -11,6 +11,7 @@ def analyze(image):
     X = tf.placeholder(tf.float32, shape = (None, 227, 227, 3), name = 'y')
     prob_1, prob_2, prob_3 = model.KitModel(weight_file='auto_gen/weights.npy', X=X, is_training=True)
     with tf.Session() as sess:
+        
         with tf.device("/gpu:0"):
             #image = cv2.imread('index.jpg')
             image = cv2.resize(image, (227, 227))

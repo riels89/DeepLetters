@@ -9,4 +9,6 @@ CNN/saved_model.pbtxt
 data_heap_by_actor.tar.gz
 CNN/trained_networks/
 build/
+dist/
+graphs/
 

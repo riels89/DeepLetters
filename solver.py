@@ -22,14 +22,14 @@ mean_image = np.load('CNN/mean_image.npy')
 log = logging.getLogger()
 log.setLevel(logging.DEBUG)
 
-def create_graph(learning_rate=1e-2, is_training=False):
+def create_graph(learning_rate=1e-2, mode="testing"):
 
 
     X = tf.placeholder(tf.float32, shape=(None, 227, 227, 3), name='inputs')
     y = tf.placeholder(tf.int64, [None], name='labels')
 
     loss3_SLclassifier_1, loss2_SLclassifier_1, loss1_SLclassifier_1 = model.KitModel(weight_file ='auto_gen/weights.npy',
-                                                                                            X=X, is_training=is_training)
+                                                                                            X=X, mode=mode)
     #mean_loss = tf.losses.softmax_cross_entropy(tf.one_hot(y, 24), y_out)
 
     values, indices = tf.nn.top_k(loss3_SLclassifier_1, 24)
@@ -53,6 +53,16 @@ def create_graph(learning_rate=1e-2, is_training=False):
         FC1 = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, 'inception_4c/FC')
         FC2 = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, 'incpetion_5a/FC')
         FC3 = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, 'inception_5b/FC')
+        loss1_fc_1 = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, 'loss1/fc_1')
+        loss2_fc_1 = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, 'loss2/fc_1')
+        inception_5a_5x5 = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, 'inception_5a/5x5')
+        inception_5a_3x3 = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, 'inception_5a/3x3')
+        inception_5b_3x3_reduce = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, 'inception_5b/3x3_reduce')
+        inception_5b_5x5_reduce = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, 'inception_5b/5x5_reduce')
+        inception_5b_1x1 = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, 'inception_5b/1x1')
+        inception_5b_pool_proj = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, 'inception_5b/pool_proj')
+        inception_5b_3x3 = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, 'inception_5b/3x3')
+        inception_5b_5x5 = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, 'inception_5b/5x5')
 
         train_step = optimzer.minimize(total_loss, var_list=[FC1, FC2, FC3])
     return loss3_SLclassifier_1, total_loss, train_step, correct_prediction, accuracy, X, y
@@ -196,11 +206,11 @@ def train(resume=False):
     y_data = np.array(data['Letter'])
     location = np.array(data['dir_name'])
 
-    X_train = X_data[:100]
+    X_train = X_data[:52995]
 
     label_encoder = LabelEncoder()
-    y_train = label_encoder.fit_transform(y_data[:100])
-    train_loc = location[:100]
+    y_train = label_encoder.fit_transform(y_data[:52995])
+    train_loc = location[:52995]
 
     #65773
     X_val = X_data[52995:65773]
@@ -230,13 +240,17 @@ def train(resume=False):
 
                 with tf.variable_scope(tf.get_variable_scope(), reuse=tf.AUTO_REUSE) as scope:
 
-                    loss3_SLclassifier_1, total_loss, train_step, correct_prediction, accuracy, X, y = create_graph(lr, True)
+                    loss3_SLclassifier_1, total_loss, train_step, correct_prediction, accuracy, X, y = create_graph(lr, mode="training")
                     saver = tf.train.Saver()
 
+                    sess.run(tf.local_variables_initializer())
+                    
                     if resume and os.path.exists(relative_root + "/static_v1_lr-" + str(lr) + ".ckpt"):
                         saver.restore(sess=sess, save_path=relative_root + "/static_v1_lr-" + str(lr) + ".ckpt")
+                    else:
+                        sess.run(tf.global_variables_initializer())
 
-                    sess.run(tf.global_variables_initializer())
+
                     log.info('Training')
 
                     run_model(sess, loss3_SLclassifier_1, total_loss, X_train, y_train, 1, 128, 100, train_step, True, correct_prediction, accuracy, X, y, train_loc)
