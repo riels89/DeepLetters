@@ -16,6 +16,7 @@ mean_image = np.load('CNN/mean_image.npy')
 def get_pictures(location):
 
     cap = cv2.VideoCapture(location)
+    print(int(cap.get(cv2.CAP_PROP_FRAME_COUNT)))
     video = np.empty([int(cap.get(cv2.CAP_PROP_FRAME_COUNT)), 227, 227, 3])
     fliped = random.random() < .5
     for i in range(video.shape[0]):
@@ -25,13 +26,13 @@ def get_pictures(location):
 
         if fliped:
             resized_image = cv2.flip(resized_image, 0)
-            
+
         video[i] = resized_image
-            
+
     cap.release()
     cv2.destroyAllWindows()
     assert not np.any(np.isnan(video))
-    
+
     return video
 
 #X = tf.placeholder(tf.float32, shape=(None, 227, 227, 3), name='inputs')
@@ -62,19 +63,19 @@ with tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_plac
 
             print([n.name for n in tf.get_default_graph().as_graph_def().node])
 
-            for signer in ['signer_1']:
+            for signer in ['signer 1']:
                 for root, dirnames, filenames in os.walk("C:/Users/riley/DeepLetters/video_data/" + str(signer)):
                     for filename in filenames:
-                        
-                        filename = os.path.join(root, filename)
-                        
-                        feed_dict = {X: get_pictures(filename)}
+
+                        full_path = os.path.join(root, filename)
+
+                        feed_dict = {X: get_pictures(full_path)}
 
                         pool_layers = sess.run([loss3_SLclassifier_0], feed_dict=feed_dict)
-                        print(len(pool_layers))
+                        #print(len(pool_layers))
                         print(pool_layers[0].shape)
 
-                        np.save(str(relative_root) + "/" + str(filename.rsplit('/', 1)[-1]) +'.npy', pool_layers)
+                        np.save("video_data/numpy/" + str(filename[:-4]) +'.npy', pool_layers)
 
 
 
