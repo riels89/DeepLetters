@@ -5,6 +5,7 @@ import cv2
 import sys
 import os
 import random
+import pandas as pd
 
 sys.path.append('CNN')
 
@@ -61,7 +62,9 @@ with tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_plac
             X = graph.get_tensor_by_name('inputs:0')
             y = graph.get_tensor_by_name('labels:0')
 
-            print([n.name for n in tf.get_default_graph().as_graph_def().node])
+            #print([n.name for n in tf.get_default_graph().as_graph_def().node])
+
+            csv = pd.DataFrame(columns=['word','filepath', 'signer'])
 
             for signer in ['signer 1']:
                 for root, dirnames, filenames in os.walk("C:/Users/riley/DeepLetters/video_data/" + str(signer)):
@@ -71,12 +74,14 @@ with tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_plac
 
                         feed_dict = {X: get_pictures(full_path)}
 
+                        csv.append(filename[:-4], full_path, signer)
+
                         pool_layers = sess.run([loss3_SLclassifier_0], feed_dict=feed_dict)
                         #print(len(pool_layers))
                         print(pool_layers[0].shape)
 
                         np.save("video_data/numpy/" + str(filename[:-4]) +'.npy', pool_layers)
 
-
+            csv.to_csv('pool_layers.csv')
 
 

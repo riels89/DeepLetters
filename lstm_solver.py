@@ -246,19 +246,21 @@ def init_constants():
     letters = list('abcdefghijklmnopqrstuvqxyz')
     letters.append('<GO>')
     letters.append('<EOS>')
-    data = pd.read_csv('ResearchWordsDeepLetters.csv')
+    data = pd.read_csv('pool_layers.csv')
     words = data['word']
-    locations = data['filepath']
 
     label_encoder = LabelEncoder()
     letters = label_encoder.fit_transform(letters)
     words = [label_encoder.transform(list(word)) for word in words]
     
-    loc_train = 
-    wrods_train =
+    train_signers = ['signer 1']
+    test_signers = ['signer 1']
     
-    loc_val =
-    words_val =
+    loc_train = data.loc[data['signer'] in train_signers]['filepath']
+    words_train = data.loc[data['signer'] in train_signers]['words']
+    
+    loc_val = data.loc[data['signer'] in test_signers]['filepath']
+    words_val = data.loc[data['signer'] in test_signers]['words']
     
     
     target_vocab_size = 26
@@ -270,7 +272,7 @@ def init_constants():
     keep_prob = 0.8
     rnn_size = 512
 
-    return letters, words, locations, target_vocab_size, batch_size, enc_embedding_size, decoding_embedding_size, lrs, keep_prob, rnn_size
+    return letters, loc_train, words_train, loc_val, words_val, target_vocab_size, batch_size, enc_embedding_size, decoding_embedding_size, lrs, keep_prob, rnn_size
 
 def create_graph(target_vocab_to_int, keep_prob, batch_size, target_vocab_size, enc_embedding_size, decoding_embedding_size, rnn_size, lr):
     train_graph = tf.Graph()
@@ -325,7 +327,8 @@ if __name__ ==  "__main__":
 
         with tf.device("/device:GPU:0"):  # "/cpu:0" or "/gpu:0"
             
-            letters, words, locations, target_vocab_size, batch_size, enc_embedding_size, decoding_embedding_size, lrs, keep_prob, rnn_size = init_constants()
+            letters, loc_train, words_train, loc_val, words_val, target_vocab_size, batch_size, \
+            enc_embedding_size, decoding_embedding_size, lrs, keep_prob, rnn_size = init_constants()
             
             for lr in lrs:
                 relative_root = "CNN/trained_networks/lstm_v1_lr-" + str(lr)
@@ -353,7 +356,7 @@ if __name__ ==  "__main__":
                 
                 log.info('Training')
                 
-                run_model(sess, predict=inference_logits, losss_val=cost, locations=locations, yd=words,
+                run_model(sess, predict=inference_logits, losss_val=cost, locations=loc_train, yd=words_train,
                           epochs=100, batch_size=128, print_every=100, training=train_op, plot_losses=True,
                           correct_predction=inference_logits, accuracy=accuracy, X=inputs, y=targets)
     
@@ -361,7 +364,7 @@ if __name__ ==  "__main__":
 
                 log.info('Validation')
                 
-                run_model(sess, predict=inference_logits, losss_val=cost, locations=locations, yd=words,
+                run_model(sess, predict=inference_logits, losss_val=cost, locations=loc_val, yd=words_val,
                           epochs=100, batch_size=128, print_every=100, training=None, plot_losses=True,
                           correct_predction=inference_logits, accuracy=accuracy, X=inputs, y=targets)
     
