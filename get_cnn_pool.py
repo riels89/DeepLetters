@@ -17,7 +17,6 @@ mean_image = np.load('CNN/mean_image.npy')
 def get_pictures(location):
 
     cap = cv2.VideoCapture(location)
-    print(int(cap.get(cv2.CAP_PROP_FRAME_COUNT)))
     video = np.empty([int(cap.get(cv2.CAP_PROP_FRAME_COUNT)), 227, 227, 3])
     fliped = random.random() < .5
     for i in range(video.shape[0]):
@@ -64,7 +63,7 @@ with tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_plac
 
             #print([n.name for n in tf.get_default_graph().as_graph_def().node])
 
-            csv = pd.DataFrame(columns=['word','filepath', 'signer'])
+            csv = pd.DataFrame(columns=['word', 'filepath', 'signer'])
 
             for signer in ['signer 1']:
                 for root, dirnames, filenames in os.walk("C:/Users/riley/DeepLetters/video_data/" + str(signer)):
@@ -74,13 +73,14 @@ with tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_plac
 
                         feed_dict = {X: get_pictures(full_path)}
 
-                        csv.append(filename[:-4], full_path, signer)
+                        csv = csv.append({'word': filename[:-4], 'filepath': "video_data/numpy/" + str(filename[:-4]) + '.npy',
+                                    'signer': signer}, ignore_index=True)
 
                         pool_layers = sess.run([loss3_SLclassifier_0], feed_dict=feed_dict)
-                        #print(len(pool_layers))
-                        print(pool_layers[0].shape)
 
-                        np.save("video_data/numpy/" + str(filename[:-4]) +'.npy', pool_layers)
+                        print(csv)
+
+                        np.save("video_data/numpy/" + str(filename[:-4]) + '.npy', pool_layers)
 
             csv.to_csv('pool_layers.csv')
 
