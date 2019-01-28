@@ -79,7 +79,7 @@ def run_model(session, predict, loss_val, locations, yd,
             loss, corr, _ = session.run(variables, feed_dict=feed_dict)
 
             # aggregate performance stats
-            losses.append(loss * actual_batch_size)
+            losses.append(loss * real_batch_size)
             correct += np.sum(corr)
 
             # print every now and then
