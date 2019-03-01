@@ -4,6 +4,30 @@ import os
 from scipy import ndimage, misc
 import pandas as pd
 
+def resize(im):
+    desired_size = 256
+
+    old_size = im.shape[:2] # old_size is in (height, width) format
+
+    ratio = float(desired_size)/max(old_size)
+    new_size = tuple([int(x*ratio) for x in old_size])
+
+    # new_size should be in (width, height) format
+
+    im = cv2.resize(im, (new_size[1], new_size[0]))
+
+    delta_w = desired_size - new_size[1]
+    delta_h = desired_size - new_size[0]
+    top, bottom = delta_h//2, delta_h-(delta_h//2)
+    left, right = delta_w//2, delta_w-(delta_w//2)
+
+    color = [0, 0, 0]
+    new_im = cv2.copyMakeBorder(im, top, bottom, left, right, cv2.BORDER_CONSTANT,
+        value=color)
+
+    return new_im
+
+
 def load_videos(folder_path, number_vids=-1, symbols=list('abcdefghijklmnopqrstuvwxyz1234567890')):
     videos = {}
     for i in range(number_vids):
@@ -49,12 +73,12 @@ def make_data_heap():
                     filepath = os.path.join(root, file)
                     print(filepath)
                     image = cv2.imread(filepath)
-                    image_resized = cv2.resize(image, (227, 227))
+                    image_resized = resize(image)
                     new_loc = os.path.join('C:/Riley/DeepLetters/data_heap/' + actor,
-                                           filepath[43].lower() + str(letter_counts[filepath[43].lower()])) + '.jpg'
+                                           filepath.rsplit('\\',1)[0][-1].lower() + str(letter_counts[filepath.rsplit('\\',1)[0][-1].lower()])) + '.jpg'
                     print(new_loc)
                     cv2.imwrite(new_loc, image_resized)
-                    letter_counts[filepath[43].lower()] += 1
+                    letter_counts[filepath.rsplit('\\',1)[0][-1].lower()] += 1
 
     for part in ('Part1', 'Part2', 'Part3', 'Part4', 'Part5'):
         letter_counts = {letter: 0 for letter in letters}
@@ -65,7 +89,7 @@ def make_data_heap():
                     filepath = os.path.join(root, file)
                     print(filepath)
                     image = cv2.imread(filepath)
-                    image_resized = cv2.resize(image, (227, 227))
+                    image_resized = resize(image)
                     new_loc = os.path.join('C:/Riley/DeepLetters/data_heap/' + part, file[6].lower() + str(letter_counts[file[6].lower()])) + '.jpg'
                     print(new_loc)
                     cv2.imwrite(new_loc, image_resized)
@@ -80,7 +104,7 @@ def make_data_heap():
                     filepath = os.path.join(root, file)
                     print(filepath)
                     image = cv2.imread(filepath)
-                    image_resized = cv2.resize(image, (227, 227))
+                    image_resized = resize(image)
                     new_loc = os.path.join('C:/Riley/DeepLetters/data_heap/' + part, file[0].lower() + str(letter_counts[file[0].lower()])) + '.jpg'
                     print(new_loc)
                     cv2.imwrite(new_loc, image_resized)

@@ -45,14 +45,14 @@ with tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_plac
 
         with tf.variable_scope(tf.get_variable_scope(), reuse=tf.AUTO_REUSE) as scope:
 
-            lr = .001
-            relative_root = "CNN/trained_networks/static_v1_lr_test_val-" + str(lr)
+            lr = 1e-6
+            relative_root = "CNN/trained_networks/static_v2_lr_test_val-" + str(lr)
 
-            saver = tf.train.import_meta_graph("CNN/trained_networks/static_v1_lr-" + str(lr) + "/static_v1_lr-" + str(lr) + ".ckpt.meta")
+            saver = tf.train.import_meta_graph("CNN/trained_networks/static_v2_lr-" + str(lr) + "/epoch-20/static_v2_lr-" + str(lr) + ".ckpt.meta")
 
             #saver = tf.train.Saver()
 
-            saver.restore(sess=sess, save_path="CNN/trained_networks/static_v1_lr-" + str(lr) + "/static_v1_lr-" + str(lr) + ".ckpt")
+            saver.restore(sess=sess, save_path="CNN/trained_networks/static_v2_lr-" + str(lr) + "/epoch-20/static_v2_lr-" + str(lr) + ".ckpt")
 
             graph = tf.get_default_graph()
             loss3_SLclassifier_0 = graph.get_tensor_by_name('pool5/7x7_s1:0')
@@ -65,8 +65,8 @@ with tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_plac
 
             csv = pd.DataFrame(columns=['word', 'filepath', 'signer'])
 
-            for signer in ['signer 1']:
-                for root, dirnames, filenames in os.walk("C:/Users/riley/DeepLetters/video_data/" + str(signer)):
+            for signer in ['Single']:
+                for root, dirnames, filenames in os.walk("video_data/" + str(signer)):
                     for filename in filenames:
 
                         full_path = os.path.join(root, filename)
@@ -83,5 +83,3 @@ with tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_plac
                         np.save("video_data/numpy/" + str(filename[:-4]) + '.npy', pool_layers)
 
             csv.to_csv('pool_layers.csv')
-
-

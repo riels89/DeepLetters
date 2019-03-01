@@ -11,6 +11,8 @@ import random
 import tensorflow as tf
 import logging
 #import seaborn as sns
+from tensorflow.python.tools import inspect_checkpoint as chkp
+
 
 sys.path.append('CNN')
 import deepletters_cnn as model
@@ -40,6 +42,7 @@ class CNN():
 
         self.start_epoch = start_epoch
 
+        #self.secondary_lr = secondary_lr
 
     def create_graph(self, learning_rate=1e-2, mode="testing"):
 
@@ -67,7 +70,7 @@ class CNN():
         #
         # total_loss = total_loss + lossL2
 
-        optimzer = tf.train.AdamOptimizer(learning_rate=learning_rate)
+        #optimzer = tf.train.AdamOptimizer(learning_rate=learning_rate)
     #optimzer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=self.momentum, use_nesterov=True)
         # have tensorflow compute accuracy
         correct_prediction = tf.equal(tf.argmax(loss3_SLclassifier_1, 1), y)
@@ -99,15 +102,33 @@ class CNN():
             var_list=[FC1, FC2, FC3, loss1_fc_1, loss2_fc_1, inception_5a_5x5, inception_5a_3x3, inception_5b_3x3_reduce,
                                            inception_5b_5x5_reduce, inception_5b_1x1, inception_5b_pool_proj, inception_5b_3x3, inception_5b_5x5]
 
-            train_step = optimzer.minimize(total_loss, var_list=var_list)
 
-        return loss3_SLclassifier_1, total_loss, train_step, correct_prediction, accuracy, X, y, top_5_corr, top_5_acc, confusion
+            vars_to_remove = ['inception_4c/FC/kernel:0', 'inception_4c/FC/bias:0', 'incpetion_5a/FC/kernel:0', 'incpetion_5a/FC/bias:0', 'loss1/fc_1/kernel:0', 'loss1/fc_1/bias:0', 'loss2/fc_1/kernel:0','loss2/fc_1/bias:0' ,'inception_5b/3x3_reduce_weight:0', 'inception_5b/3x3_reduce_bias:0',
+                              'inception_5b/5x5_reduce_weight:0', 'inception_5b/5x5_reduce_bias:0', 'inception_5b/1x1_weight:0', 'inception_5b/1x1_bias:0', 'inception_5b/pool_proj_weight:0',
+                              'inception_5b/pool_proj_bias:0', 'inception_5b/3x3_weight:0', 'inception_5b/3x3_bias:0', 'inception_5b/5x5_weight:0', 'inception_5b/5x5_bias:0', 'inception_5b/FC/kernel:0', 'inception_5b/FC/bias:0']
+            trainable_variables = tf.get_collection_ref(tf.GraphKeys.TRAINABLE_VARIABLES)
+            #self.log.info(tf.trainable_variables())
+            #self.log.info(trainable_variables)
+            for var in trainable_variables:
+                #self.log.info('Var name: ' + var.name)
+
+                if var.name in vars_to_remove:
+                    trainable_variables.remove(var)
+                    #self.log.info("REMOVED VARIABLE: " + var.name)
+
+            train_step = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(total_loss, var_list=trainable_variables)
+            upper_train_step = tf.train.AdamOptimizer(learning_rate=.0001).minimize(total_loss, var_list=var_list)
+
+        return loss3_SLclassifier_1, total_loss, train_step, correct_prediction, accuracy, X, y, top_5_corr, top_5_acc, confusion, upper_train_step
     def get_pictures(self, Xd, location):
         images = np.empty((Xd.shape[0], 227, 227, 3))
         #print(Xd)
         #print(location)
         for i in range(Xd.shape[0]):
             im = cv2.imread(location[i] + "/" + Xd[i])
+            x = random.randint(0, 256 - 227)
+            im = im[x:x+227, x:x+227]
+
             if random.random() < .5:
                 im = cv2.flip(im, 0)
             #print(location[i] + "/" + Xd[i])
@@ -120,7 +141,7 @@ class CNN():
                   epochs=1, batch_size=64, print_every=100,
                   training=None, plot_losses=False,
                   correct_prediction=None, accuracy=None, X=None, y=None, location=None, X_val=None, y_val=None, val_loc=None,
-                  saver=None, top_5_correct_prediction=None, top_5_accuracy=None, confusion=None, classes=None):
+                  saver=None, top_5_correct_prediction=None, top_5_accuracy=None, confusion=None, classes=None, upper_train_step=None):
 
 
         val_losses = []
@@ -140,6 +161,7 @@ class CNN():
         variables = [loss_val, correct_prediction, accuracy, top_5_correct_prediction, top_5_accuracy]
         if training_now:
             variables[-1] = training
+            variables[2] = upper_train_step
             if self.resume:
                 overall_train_losses = np.load(self.absolute_root + "/CNN/trained_networks/static_v2_lr-" + str(glr) + "/epoch-" + str(self.start_epoch) + "/static_v2_lr-" + str(glr) + "-overall_train_losses.npy").tolist()
         else:
@@ -204,7 +226,7 @@ class CNN():
 
             if training_now:
                 self.log.info("Epoch " + str(e + 1) + ", Overall loss = " + str(epoch_loss) + ", an accuracy of " + str(total_correct) + " and a top-5 accuracy of " + str(epoch_top_5_acc))
-            if plot_losses and training_now is True and (e%10) == 0:
+            if plot_losses and training_now is True:
                 self.log.info('Validation-------------------------')
                 os.mkdir(relative_root)
 
@@ -244,7 +266,7 @@ class CNN():
                 #heatmap = sns.heatmap(val_confusion_matrix, annot=True).get_figure()
                 #heatmap.savefig(relative_root +"/static_v2_lr-" + str(glr) + "-confusion_matrix.png")
 
-        return epoch_loss, total_correct
+        return overall_train_losses, total_correct
 
     def train(self):
 
@@ -309,8 +331,8 @@ class CNN():
 
         label_encoder = LabelEncoder()
         #'Part5', 'Part2', 'Part3', 'part4','Part1'
-        train_signers = ['C', 'B', 'D', 'A', 'Part5', 'Part2', 'Part3', 'part4', 'user_3', 'user_4', 'user_5', 'user_6', 'user_7', 'user_9', 'user_10']
-        test_signers = ['E','Part1']
+        train_signers = ['C', 'B', 'D', 'A', 'Part5', 'Part2', 'Part3', 'part4', 'user_3', 'user_4', 'user_5', 'user_6', 'user_7', 'user_9', 'user_10', 'Part1']
+        test_signers = ['E']
 
         X_train = data.loc[data['dir_name'].isin(train_signers)]['file_name'].values
         y_train = data.loc[data['dir_name'].isin(train_signers)]['Letter'].values
@@ -357,31 +379,33 @@ class CNN():
 
                     with tf.variable_scope(tf.get_variable_scope(), reuse=tf.AUTO_REUSE) as scope:
 
-                        loss3_SLclassifier_1, total_loss, train_step, correct_prediction, accuracy, X, y, top_5_corr, top_5_acc, confusion = self.create_graph(lr, mode="training")
+                        loss3_SLclassifier_1, total_loss, train_step, correct_prediction, accuracy, X, y, top_5_corr, top_5_acc, confusion, upper_train_step = self.create_graph(lr, mode="training")
 
-                        saver = tf.train.Saver()
+                        #saver = tf.train.Saver()
 
-                        sess.run(tf.local_variables_initializer())
-
+                        #sess.run(tf.local_variables_initializer())
 
                         if self.resume:
-                            saver.restore(sess=sess, save_path=relative_root + "/epoch-91/static_v2_lr-" + str(lr) + ".ckpt")
+                            self.log.info("ENTERED RESUME")
+                            #saver.restore(sess=sess, save_path=relative_root + "/epoch-20/static_v2_lr-" + str(lr) + ".ckpt")
+                            #chkp.print_tensors_in_checkpoint_file(relative_root + "/epoch-20/static_v2_lr-" + str(lr) + ".ckpt", tensor_name='', all_tensors=True)
 
-                            # reader = tf.train.NewCheckpointReader(relative_root + "/static_v1_lr-" + lr + ".ckpt")
-                            # restore_dict = dict()
-                            # for v in tf.trainable_variables():
-                            #   tensor_name = v.name.split(':')[0]
-                            #   if reader.has_tensor(tensor_name):
-                            #     print('has tensor ', tensor_name)
-                            #     restore_dict[tensor_name] = v
-                            #
-                            # saver = tf.train.Saver(restore_dict)
-                            # sess.run(tf.local_variables_initializer())
-                            # saver.restore(sess=sess, save_path="C:/Riley/DeepLetters/CNN/trained_networks-Old/static_v1_lr-0.001/static_v1_lr-0.001.ckpt")
-                            #
-                            # is_not_initialized   = sess.run([tf.is_variable_initialized(var) for var in tf.global_variables()])
-                            # not_initialized_vars = [v for (v, f) in zip(tf.global_variables(), is_not_initialized) if not f]
-                            # sess.run(tf.initialize_variables(not_initialized_vars))
+                            reader = tf.train.NewCheckpointReader(relative_root + "/epoch-20/static_v2_lr-" + str(lr) + ".ckpt")
+                            restore_dict = dict()
+                            for v in tf.trainable_variables():
+                              tensor_name = v.name.split(':')[0]
+                              if reader.has_tensor(tensor_name):
+                                self.log.info('has tensor ', tensor_name)
+                                restore_dict[tensor_name] = v
+
+                            saver = tf.train.Saver(restore_dict)
+                            sess.run(tf.local_variables_initializer())
+                            saver.restore(sess=sess, save_path=relative_root + "/epoch-20/static_v2_lr-" + str(lr) + ".ckpt")
+
+                            is_not_initialized   = sess.run([tf.is_variable_initialized(var) for var in tf.global_variables()])
+                            not_initialized_vars = [v for (v, f) in zip(tf.global_variables(), is_not_initialized) if not f]
+                            self.log.info("NON INITIALIZED VARIABLES" + str(not_initialized_vars))
+                            sess.run(tf.initialize_variables(not_initialized_vars))
 
                         else:
                             sess.run(tf.global_variables_initializer())
@@ -389,9 +413,9 @@ class CNN():
                         self.log.info('Training')
 
                         self.run_model(sess, predict=loss3_SLclassifier_1, loss_val=total_loss, Xd=X_train, yd=y_train,
-                                  epochs=self.start_epoch + 201, batch_size=self.batch_size, print_every=100, training=train_step, plot_losses=True,
+                                  epochs=self.start_epoch + 50, batch_size=self.batch_size, print_every=100, training=train_step, plot_losses=True,
                                   correct_prediction=correct_prediction, accuracy=accuracy, X=X, y=y, location=train_loc, X_val=X_val, y_val=y_val, val_loc=val_loc, saver=saver,
-                                  top_5_correct_prediction=top_5_corr, top_5_accuracy=top_5_acc, confusion=confusion, classes=list(label_encoder.classes_))
+                                  top_5_correct_prediction=top_5_corr, top_5_accuracy=top_5_acc, confusion=confusion, classes=list(label_encoder.classes_), upper_train_step=upper_train_step)
 
                         #self.run_model(sess, loss3_SLclassifier_1, total_loss, X_train, y_train, 500, 128, 100, train_step, True, correct_prediction, accuracy, X, y, train_loc)
 

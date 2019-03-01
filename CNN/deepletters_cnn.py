@@ -2,7 +2,7 @@ import tensorflow as tf
 
 __weights_dict = dict()
 
-is_train = False
+is_train = True
 import numpy as np
 
 
@@ -114,6 +114,7 @@ def KitModel(weight_file = None, X=None, mode="testing"):
     inception_4b_relu_3x3 = tf.nn.relu(inception_4b_3x3, name = 'inception_4b/relu_3x3')
     loss1_fc_1      = tf.layers.dense(loss1_fc_0, 1024, kernel_initializer = tf.constant_initializer(__weights_dict['loss1/fc_1']['weights']),
                                       bias_initializer = tf.constant_initializer(__weights_dict['loss1/fc_1']['bias']), use_bias=True, name='loss1/fc_1')
+    #loss1_fc_1_dropout = tf.nn.dropout(loss1_fc_1, dropout, name='loss1_fc_1_dropout')
     inception_4b_output = tf.concat([inception_4b_relu_1x1, inception_4b_relu_3x3, inception_4b_relu_5x5, inception_4b_relu_pool_proj], 3, name = 'inception_4b/output')
     loss1_relu_fc   = tf.nn.relu(loss1_fc_1, name = 'loss1/relu_fc')
     inception_4c_5x5_reduce = convolution(inception_4b_output, group=1, strides=[1, 1], padding='VALID', name='inception_4c/5x5_reduce')
@@ -176,6 +177,7 @@ def KitModel(weight_file = None, X=None, mode="testing"):
     inception_4e_relu_3x3 = tf.nn.relu(inception_4e_3x3, name = 'inception_4e/relu_3x3')
     loss2_fc_1      = tf.layers.dense(loss2_fc_0, 1024, kernel_initializer = tf.constant_initializer(__weights_dict['loss2/fc_1']['weights']),
                                       bias_initializer = tf.constant_initializer(__weights_dict['loss2/fc_1']['bias']), use_bias=True, name='loss2/fc_1')
+    #loss2_fc_1_dropout = tf.nn.dropout(loss2_fc_1, dropout, name='loss2_fc_1_dropout')
     inception_4e_output = tf.concat([inception_4e_relu_1x1, inception_4e_relu_3x3, inception_4e_relu_5x5, inception_4e_relu_pool_proj], 3, name = 'inception_4e/output')
     loss2_relu_fc   = tf.nn.relu(loss2_fc_1, name = 'loss2/relu_fc')
     pool4_3x3_s2_pad = tf.pad(inception_4e_output, paddings = [[0, 0], [0, 1], [0, 1], [0, 0]], constant_values=float('-Inf'))
@@ -248,4 +250,3 @@ def convolution(input, name, group, **kwargs):
         b = tf.Variable(__weights_dict[name]['bias'], trainable=is_train, name=name + "_bias")
         layer = layer + b
     return layer
-
