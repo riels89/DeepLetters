@@ -6,13 +6,36 @@ import sys
 import os
 import random
 import pandas as pd
-
+from pprint import pprint
 sys.path.append('CNN')
 
 log = logging.getLogger()
 log.setLevel(logging.DEBUG)
 
 mean_image = np.load('CNN/mean_image.npy')
+
+def resize(im):
+    desired_size = 256
+
+    old_size = im.shape[:2] # old_size is in (height, width) format
+
+    ratio = float(desired_size)/max(old_size)
+    new_size = tuple([int(x*ratio) for x in old_size])
+
+    # new_size should be in (width, height) format
+
+    im = cv2.resize(im, (new_size[1], new_size[0]))
+
+    delta_w = desired_size - new_size[1]
+    delta_h = desired_size - new_size[0]
+    top, bottom = delta_h//2, delta_h-(delta_h//2)
+    left, right = delta_w//2, delta_w-(delta_w//2)
+
+    color = [0, 0, 0]
+    new_im = cv2.copyMakeBorder(im, top, bottom, left, right, cv2.BORDER_CONSTANT,
+        value=color)
+
+    return new_im
 
 def get_pictures(location):
 
@@ -21,7 +44,10 @@ def get_pictures(location):
     fliped = random.random() < .5
     for i in range(video.shape[0]):
         ret, frame = cap.read()
-        resized_image = cv2.resize(frame, (227, 227))
+        resized_image = resize(frame)
+        x = random.randint(0, 256 - 227)
+        resized_image = resized_image[x:x+227, x:x+227]
+
         resized_image = resized_image - mean_image
 
         if fliped:
@@ -45,14 +71,14 @@ with tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_plac
 
         with tf.variable_scope(tf.get_variable_scope(), reuse=tf.AUTO_REUSE) as scope:
 
-            lr = 1e-6
+            lr = 1e-4
             relative_root = "CNN/trained_networks/static_v2_lr_test_val-" + str(lr)
 
-            saver = tf.train.import_meta_graph("CNN/trained_networks/static_v2_lr-" + str(lr) + "/epoch-20/static_v2_lr-" + str(lr) + ".ckpt.meta")
+            saver = tf.train.import_meta_graph("C:/Riley/DeepLetters/CNN/trained_networks/one opt/static_v2_lr-1e-06/epoch-7/static_v2_lr-1e-06.ckpt.meta")
 
             #saver = tf.train.Saver()
 
-            saver.restore(sess=sess, save_path="CNN/trained_networks/static_v2_lr-" + str(lr) + "/epoch-20/static_v2_lr-" + str(lr) + ".ckpt")
+            saver.restore(sess=sess, save_path="C:/Riley/DeepLetters/CNN/trained_networks/one opt/static_v2_lr-1e-06/epoch-7/static_v2_lr-1e-06.ckpt")
 
             graph = tf.get_default_graph()
             loss3_SLclassifier_0 = graph.get_tensor_by_name('pool5/7x7_s1:0')
@@ -65,7 +91,7 @@ with tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_plac
 
             csv = pd.DataFrame(columns=['word', 'filepath', 'signer'])
 
-            for signer in ['Single']:
+            for signer in ['signer1', 'signer2', 'signer3', 'signer4', 'signer5']:
                 for root, dirnames, filenames in os.walk("video_data/" + str(signer)):
                     for filename in filenames:
 
@@ -73,13 +99,17 @@ with tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_plac
 
                         feed_dict = {X: get_pictures(full_path)}
 
-                        csv = csv.append({'word': filename[:-4], 'filepath': "video_data/numpy/" + str(filename[:-4]) + '.npy',
+                        word = ''.join(filter(str.isalpha, str(filename[:-4]))).lower()
+
+                        csv = csv.append({'word': word, 'filepath': "video_data/numpy/" + word + '.npy',
                                     'signer': signer}, ignore_index=True)
 
                         pool_layers = sess.run([loss3_SLclassifier_0], feed_dict=feed_dict)
 
-                        print(csv)
+                        pprint(pool_layers)
+                        print(len(pool_layers[0]))
+                        #print(csv)
 
-                        np.save("video_data/numpy/" + str(filename[:-4]) + '.npy', pool_layers)
+                        #np.save("video_data/numpy/" + word + '.npy', pool_layers)
 
             csv.to_csv('pool_layers.csv')
