@@ -111,6 +111,35 @@ def make_data_heap():
                     letter_counts[file[0].lower()] += 1
     print(letter_counts)
 
+    for part in ('Signer_1', 'Signer__2', 'Signer_3'):
+        letter_counts = {letter: 0 for letter in letters}
+        os.mkdir('C:/Riley/DeepLetters/data_heap/' + part)
+        for root, dirnames, filenames in os.walk("C:/Riley/DeepLetters/Data/Dataset/Garbage_Frames_Train" + part):
+            for file in filenames:
+                filepath = os.path.join(root, file)
+                print(filepath)
+                image = cv2.imread(filepath)
+                image_resized = resize(image)
+                new_loc = os.path.join('C:/Riley/DeepLetters/data_heap/' + part, file[0].lower() + str(letter_counts[file[0].lower()])) + '.jpg'
+                print(new_loc)
+                cv2.imwrite(new_loc, image_resized)
+                letter_counts[file[0].lower()] += 1
+    print(letter_counts)
+
+    for part in ('Signer'):
+        letter_counts = {letter: 0 for letter in letters}
+        os.mkdir('C:/Riley/DeepLetters/data_heap/' + part)
+        for root, dirnames, filenames in os.walk("C:/Riley/DeepLetters/Data/Dataset/Garbage_Frames_Validation" + part):
+            for file in filenames:
+                filepath = os.path.join(root, file)
+                print(filepath)
+                image = cv2.imread(filepath)
+                image_resized = resize(image)
+                new_loc = os.path.join('C:/Riley/DeepLetters/data_heap/' + part, file[0].lower() + str(letter_counts[file[0].lower()])) + '.jpg'
+                print(new_loc)
+                cv2.imwrite(new_loc, image_resized)
+                letter_counts[file[0].lower()] += 1
+    print(letter_counts)
 
 def make_picture_list():
     picture_list = []
