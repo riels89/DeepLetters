@@ -1,0 +1,4 @@
+python MMdnn/mmdnn/conversion/_script/convert.py -sf tensorflow -iw CNN\best_cnn.pb --inNodeName inputs --inputShape 227,227,3 --dstNodeName prob3 -df keras -om tf_deepletters
+
+!! I edited the tensorflow_frozenparser in mmdnn to deal with the Pad_v2 by just using normal pad instead
+ (only difference is that normal pad has different variable order)
