@@ -43,16 +43,17 @@ class lstm():
 
         self.target_vocab_size = len(self.target_vocab_to_int)
 
-        train_signers = ['signer1', 'signer2', 'signer3', 'signer5']
-        test_signers = ['signer4']
+        # 'signer2', 'signer3', 'signer5', singer4
+        train_signers = ['signer 1']
+        test_signers = ['signer 1']
 
-        self.loc_train = data.loc[data['signer'].isin(train_signers)]['filepath'].values
-        self.dec_input_train = data.loc[data['signer'].isin(train_signers)]['word'].values
+        self.loc_train = data.loc[data['signer'].isin(train_signers)]['filepath'].values[:2]
+        self.dec_input_train = data.loc[data['signer'].isin(train_signers)]['word'].values[:2]
 
-        self.loc_val = data.loc[data['signer'].isin(test_signers)]['filepath'].values
-        self.dec_input_val = data.loc[data['signer'].isin(test_signers)]['word'].values
+        self.loc_val = data.loc[data['signer'].isin(test_signers)]['filepath'].values[:2]
+        self.dec_input_val = data.loc[data['signer'].isin(test_signers)]['word'].values[:2]
 
-        both =  np.concatenate((self.dec_input_train, self.dec_input_val))
+        both = np.concatenate((self.dec_input_train, self.dec_input_val))
 
         target_lengths = [len(target) for target in both]
         self.max_seq_length = max(target_lengths)
@@ -104,7 +105,7 @@ class lstm():
         encoder_dense_outputs = encoder_dense(encoder_inputs)
         #encoder_dense_outputs2 = encoder_dense2(encoder_dense_outputs1)
 
-        encoder1 = CuDNNLSTM(self.latent_dim, return_sequences=True, return_state=True)
+        encoder1 = LSTM(self.latent_dim, return_sequences=True, return_state=True)
 
         encoder_outputs, state_h, state_c = encoder1(encoder_dense_outputs)
         # We discard `encoder_outputs` and only keep the states.
@@ -115,9 +116,9 @@ class lstm():
         # We set up our decoder to return full output sequences,
         # and to return internal states as well. We don't use the
         # return states in the training model, but we will use them in inference.
-        decoder_lstm1 = CuDNNLSTM(self.latent_dim, return_sequences=True, return_state=True)
+        decoder_lstm1 = LSTM(self.latent_dim, return_sequences=True, return_state=True)
         #decoder_lstm2 = CuDNNLSTM(self.latent_dim, return_sequences=True, return_state=True)
-        decoder_outputs, _, _ =decoder_lstm1(decoder_inputs,
+        decoder_outputs, _, _ = decoder_lstm1(decoder_inputs,
                                              initial_state=encoder_states)
         decoder_dense = Dense(self.target_vocab_size, activation='softmax')
         decoder_outputs = decoder_dense(decoder_outputs)
