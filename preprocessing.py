@@ -152,8 +152,20 @@ def make_picture_list():
     print(picture_list)
     picture_list.to_csv('C:/Riley/DeepLetters/227X227_v2.csv')
 
+def make_new_picture_list():
+    new_picture_list = []
+    for root, dirnames, filenames in os.walk('C:/Riley/DeepLetters/New_Images_DeepLetters'):
+        for file in filenames:
+            if file[0] != 'j' and file[0] != 'z':
+                print(file)
+                picture_list.append({'root': root, 'dir_name':root.rsplit('\\',1)[1], 'file_name': file, 'Letter': file[0], 'Number': file[1:len(file) - 4]})
+    new_picture_list = pd.DataFrame(picture_list)
+    print(picture_list)
+    new_picture_list.to_csv('C:/Riley/DeepLetters/227X227_new_images.csv')
+
 make_data_heap()
 make_picture_list()
+make_new_picture_list()
 # videos = load_data('C:/Riley/Documents/.Research Project/0', 1, symbols='ABCDEFGHIJKLMNOPQRSTUVWYXZ')
 
 # print(videos['A'][1][400, 400])
