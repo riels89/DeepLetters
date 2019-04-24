@@ -59,7 +59,8 @@ class TensorflowParser2(Parser):
         # "Cast"
         "Pack",
         "CheckNumerics",
-        "Where"
+        "Where",
+        'PadV2'
     ])
 
 
@@ -149,7 +150,7 @@ class TensorflowParser2(Parser):
                     x = tensorflow.placeholder(dtype)
 
                 input_map[in_nodes[i] + ':0'] = x
-           
+
             tensorflow.import_graph_def(model, name='', input_map=input_map)
 
         with tensorflow.Session(graph = g) as sess:
@@ -348,13 +349,16 @@ class TensorflowParser2(Parser):
                 continue
 
             node_type = current_node.type
-            
+
             if hasattr(self, "rename_" + node_type):
- 
+
                 func = getattr(self, "rename_" + node_type)
                 func(current_node)
+            elif node_type == 'PadV2':
+
+                func = getattr(self, "rename_" + 'Pad')
+                func(current_node)
             else:
-                
                 self.rename_UNKNOWN(current_node)
 
 
@@ -417,6 +421,7 @@ class TensorflowParser2(Parser):
             return
         print("Tensorflow has not supported operator [%s] with name [%s]."
               % (source_node.type, source_node.name))
+        print("Type: " + source_node.type + " Name: " + source_node.name)
         assert False
 
     def rename_NoOp(self, source_node):
@@ -1110,6 +1115,6 @@ class TensorflowParser2(Parser):
         kwargs['shape'] = self.tensor_shape_to_list(input_node.get_attr('_output_shapes'))[0]
 
         assign_IRnode_values(IR_node, kwargs)
-    
+
     def rename_Log(self, source_node):
         IR_node = self._convert_identity_operation(source_node, new_op = 'Log')
