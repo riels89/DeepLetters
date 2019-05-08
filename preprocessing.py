@@ -5,7 +5,7 @@ from scipy import ndimage, misc
 import pandas as pd
 
 def resize(im):
-    desired_size = 256
+    desired_size = 227
 
     old_size = im.shape[:2] # old_size is in (height, width) format
 
@@ -142,6 +142,7 @@ def make_data_heap():
     print(letter_counts)
 
 def make_picture_list():
+    gs = ['g_1', 'g_2', 'g_3']
     picture_list = []
     for root, dirnames, filenames in os.walk('C:/Riley/DeepLetters/data_heap'):
         for file in filenames:
@@ -154,18 +155,40 @@ def make_picture_list():
 
 def make_new_picture_list():
     new_picture_list = []
-    for root, dirnames, filenames in os.walk('C:/Riley/DeepLetters/New_Images_DeepLetters'):
+
+    for root, dirnames, filenames in os.walk('C:/Users/Riley/DeepLetters/New_Images_DeepLetters'):
         for file in filenames:
             if file[0] != 'j' and file[0] != 'z':
                 print(file)
-                picture_list.append({'root': root, 'dir_name':root.rsplit('\\',1)[1], 'file_name': file, 'Letter': file[0], 'Number': file[1:len(file) - 4]})
-    new_picture_list = pd.DataFrame(picture_list)
-    print(picture_list)
-    new_picture_list.to_csv('C:/Riley/DeepLetters/227X227_new_images.csv')
+                print(file[-5])
+                new_picture_list.append({'root': 'New_Images_DeepLetters', 'dir_name':'New_Images_DeepLetters', 'file_name': file, 'Letter': file[-5]})
+    new_picture_list = pd.DataFrame(new_picture_list)
+    print(new_picture_list)
+    new_picture_list.to_csv('C:/Users/Riley/DeepLetters/227X227_new_images.csv')
 
-make_data_heap()
-make_picture_list()
-make_new_picture_list()
+def crop_img():
+    new_picture_list = []
+    for root, dirnames, filenames in os.walk('C:/Riley/DeepLetters/New_Images_DeepLetters'):
+        for file in filenames:
+            filepath = os.path.join(root, file)
+            image = cv2.imread(filepath)
+            image = image[400:2619, 804:2219]
+            print(image.shape)
+            image_resized = resize(image)
+            # cv2.imshow("cropped", image_resized)
+            # cv2.waitKey(0)
+
+            print(image_resized.shape)
+            cv2.imwrite("cropped_test/" + file, image_resized)
+            #cropped_img = img[]
+
+
+# make_data_heap()
+# make_picture_list()
+# make_new_picture_list()
+crop_img()
+
+
 # videos = load_data('C:/Riley/Documents/.Research Project/0', 1, symbols='ABCDEFGHIJKLMNOPQRSTUVWYXZ')
 
 # print(videos['A'][1][400, 400])

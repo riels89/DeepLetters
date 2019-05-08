@@ -48,19 +48,19 @@ def set_layer_weights(model, weights_dict):
 def KitModel(weight_file = None):
     weights_dict = load_weights_from_file(weight_file) if not weight_file == None else None
 
-    Placeholder     = layers.Input(name = 'Placeholder', shape = (227, 227, 3,) )
-    Pad             = layers.ZeroPadding2D(name='Pad', padding=((3, 4), (3, 4)))(Placeholder)
+    X     = layers.Input(name = 'input', shape = (227, 227, 3,) )
+    Pad             = layers.ZeroPadding2D(name='Pad', padding=((3, 4), (3, 4)))(X)
     conv1_7x7_s2    = convolution(weights_dict, name='conv1/7x7_s2', input=Pad, group=1, conv_type='layers.Conv2D', filters=64, kernel_size=(7, 7), strides=(2, 2), dilation_rate=(1, 1), padding='valid', use_bias=True)
     conv1_relu_7x7  = layers.Activation(name='conv1/relu_7x7', activation='relu')(conv1_7x7_s2)
     PadV2           = layers.ZeroPadding2D(name='PadV2', padding=((0, 1), (0, 1)))(conv1_relu_7x7)
     pool1_3x3_s2    = layers.MaxPooling2D(name = 'pool1/3x3_s2', pool_size = (3, 3), strides = (2, 2), padding = 'valid')(PadV2)
-    pool1_norm1     = LRN(size = 2, alpha = 1.9999999494757503e-05, beta = 0.75, k = None, name = 'pool1/norm1')(pool1_3x3_s2)
+    pool1_norm1     = LRN(size = 2, alpha = 1.9999999494757503e-05, beta = 0.75,  name = 'pool1/norm1')(pool1_3x3_s2)
     conv2_3x3_reduce = convolution(weights_dict, name='conv2/3x3_reduce', input=pool1_norm1, group=1, conv_type='layers.Conv2D', filters=64, kernel_size=(1, 1), strides=(1, 1), dilation_rate=(1, 1), padding='valid', use_bias=True)
     conv2_relu_3x3_reduce = layers.Activation(name='conv2/relu_3x3_reduce', activation='relu')(conv2_3x3_reduce)
     Pad_1           = layers.ZeroPadding2D(name='Pad_1', padding=((1, 1), (1, 1)))(conv2_relu_3x3_reduce)
     conv2_3x3       = convolution(weights_dict, name='conv2/3x3', input=Pad_1, group=1, conv_type='layers.Conv2D', filters=192, kernel_size=(3, 3), strides=(1, 1), dilation_rate=(1, 1), padding='valid', use_bias=True)
     conv2_relu_3x3  = layers.Activation(name='conv2/relu_3x3', activation='relu')(conv2_3x3)
-    conv2_norm2     = LRN(size = 2, alpha = 1.9999999494757503e-05, beta = 0.75, k = None, name = 'conv2/norm2')(conv2_relu_3x3)
+    conv2_norm2     = LRN(size = 2, alpha = 1.9999999494757503e-05, beta = 0.75,  name = 'conv2/norm2')(conv2_relu_3x3)
     PadV2_1         = layers.ZeroPadding2D(name='PadV2_1', padding=((0, 1), (0, 1)))(conv2_norm2)
     pool2_3x3_s2    = layers.MaxPooling2D(name = 'pool2/3x3_s2', pool_size = (3, 3), strides = (2, 2), padding = 'valid')(PadV2_1)
     PadV2_2         = layers.ZeroPadding2D(name='PadV2_2', padding=((1, 1), (1, 1)))(pool2_3x3_s2)
@@ -221,17 +221,17 @@ def KitModel(weight_file = None):
     inception_5b_relu_5x5 = layers.Activation(name='inception_5b/relu_5x5', activation='relu')(inception_5b_5x5)
     inception_5b_output = layers.concatenate(name = 'inception_5b/output', inputs = [inception_5b_relu_1x1, inception_5b_relu_3x3, inception_5b_relu_5x5, inception_5b_relu_pool_proj])
     pool5_7x7_s1    = layers.AveragePooling2D(name = 'pool5/7x7_s1', pool_size = (7, 7), strides = (1, 1), padding = 'valid')(inception_5b_output)
-    Flatten_4_flatten_Reshape = layers.Reshape(name = 'Flatten_4/flatten/Reshape', target_shape = (-1))(pool5_7x7_s1)
-    inception_5b_FC_MatMul = layers.Dense(name = 'inception_5b/FC/MatMul', units = 24, use_bias = True)(Flatten_4_flatten_Reshape)
+    Flatten_4_flatten_Reshape = layers.Flatten(name = 'Flatten_4/flatten/Reshape')(pool5_7x7_s1)
+    inception_5b_FC_MatMul = layers.Dense(name = 'inception_5b/FC/MatMul', units = 25, use_bias = True)(Flatten_4_flatten_Reshape)
     prob3           = layers.Activation(name='prob3', activation='softmax')(inception_5b_FC_MatMul)
-    model           = Model(inputs = [Placeholder], outputs = [Flatten_4_flatten_strided_slice, prob3])
+    model           = Model(inputs = [X], outputs = [prob3])
     set_layer_weights(model, weights_dict)
     return model
 
 from keras.layers.core import Layer
 class LRN(Layer):
 
-    def __init__(self, size=5, alpha=0.0005, beta=0.75, k=2, **kwargs):
+    def __init__(self, size=5, alpha=0.0005, beta=0.75, k=1, **kwargs):
         self.n = size
         self.alpha = alpha
         self.beta = beta

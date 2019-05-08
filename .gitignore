@@ -13,3 +13,11 @@ dist/
 graphs/
 ChicagoFSWild/
 video_data/
+data_heap - OG/
+LSTM/
+model/
+OLD - video_data/
+trained model/
+CNN/
+ChicagoFS/
+auto_gen_from_tf/
