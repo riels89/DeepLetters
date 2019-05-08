@@ -54,7 +54,7 @@ class CNN():
         dropout = tf.placeholder(tf.float32, shape=(), name='dropout')
 
         loss3_SLclassifier_1, loss2_SLclassifier_1, loss1_SLclassifier_1 = model.KitModel(weight_file = self.absolute_root + '/auto_gen/weights.npy',
-                                                                                                X=X, mode=mode, dropout=dropout)
+                                                                                                X=X, mode=mode)
         #mean_loss = tf.losses.softmax_cross_entropy(tf.one_hot(y, 24), y_out)
 
         values, indices = tf.nn.top_k(loss3_SLclassifier_1, 24)
@@ -135,11 +135,11 @@ class CNN():
         #print(location)
         for i in range(Xd.shape[0]):
             im = cv2.imread(location[i] + "/" + Xd[i])
-            x = random.randint(0, 256 - 227)
-            im = im[x:x+227, x:x+227]
-
-            if random.random() < .5:
-                im = cv2.flip(im, 0)
+            # x = random.randint(0, 256 - 227)
+            # im = im[x:x+227, x:x+227]
+            #
+            # if random.random() < .5:
+            #     im = cv2.flip(im, 0)
             #print(location[i] + "/" + Xd[i])
             images[i] = im
         assert not np.any(np.isnan(images))
@@ -171,9 +171,10 @@ class CNN():
         if training_now:
             variables[-1] = training
             if self.resume:
+                pass
                 #overall_train_losses = np.load(self.absolute_root + "/CNN/trained_networks/static_v2_lr-" + str(glr) + "/epoch-" + str(self.start_epoch) + "/static_v2_lr-" + str(glr) + "-overall_train_losses.npy").tolist()
-                overall_train_losses = np.load("C:/Riley/DeepLetters/CNN/trained_networks/one opt/static_v2_lr-1e-06/epoch-7/static_v2_lr-1e-06-overall_train_losses.npy").tolist()
-                val_losses = np.load("C:/Riley/DeepLetters/CNN/trained_networks/one opt/static_v2_lr-1e-06/epoch-7/static_v2_lr-1e-06-val_losses.npy").tolist()
+                #overall_train_losses = np.load("C:/Riley/DeepLetters/CNN/trained_networks/one opt/static_v2_lr-1e-06/epoch-7/static_v2_lr-1e-06-overall_train_losses.npy").tolist()
+                #val_losses = np.load("C:/Riley/DeepLetters/CNN/trained_networks/one opt/static_v2_lr-1e-06/epoch-7/static_v2_lr-1e-06-val_losses.npy").tolist()
 
 
                 #val_losses = np.load(self.absolute_root + "/CNN/trained_networks/static_v2_lr-" + str(glr) + "/epoch-" + str(self.start_epoch) + "/static_v2_lr-" + str(glr) + "-val_losses.npy").tolist()
@@ -232,7 +233,8 @@ class CNN():
 
             confusion_matricies = np.array(confusion_matricies)
             if training_now:
-                total_correct = correct / (Xd.shape[0] +1)
+                pass
+                total_correct = correct / (Xd.shape[0]+1)
                 epoch_loss = np.sum(losses) / (Xd.shape[0]+1)
                 overall_train_losses.append(epoch_loss)
                 epoch_top_5_acc = tot_top_5_correct / (Xd.shape[0]+1)
@@ -287,7 +289,7 @@ class CNN():
                 total_confusion_matrix = pd.DataFrame(total_confusion_matrix, columns=classes, index=classes)
                 total_confusion_matrix = total_confusion_matrix.div(total_confusion_matrix.sum(axis=1), axis=0)
                 heatmap = sns.heatmap(total_confusion_matrix, cmap="Blues")
-                heatmap.set_title('Confusion Matrix')
+                heatmap.set_title('Test Confusion Matrix')
                 heatmap.set_xlabel('Predicted Label')
                 heatmap.set_ylabel('True Label')
                 heatmap.set_yticklabels(heatmap.get_yticklabels(), rotation=0)
@@ -352,7 +354,18 @@ class CNN():
                 # strip_default_attrs=True)
                 #
                 # builder.save()
-        data = pd.read_csv(self.absolute_root + '/227X227_v2.csv')
+        data = pd.read_csv(self.absolute_root + '/227X227_new_images.csv')
+        # idx = []
+        # for index, row in data.iterrows():
+        #     if 'Outside' not in row['file_name']:
+        #         idx.append(index)
+        #
+        # data = data.drop(idx)
+        #
+        # data.reset_index(drop=True, inplace=True)
+
+
+        print(data)
 
         X_data = np.array(data['file_name'])
         y_data = np.array(data['Letter'])
@@ -362,7 +375,7 @@ class CNN():
         #'Part5', 'Part2', 'Part3', 'part4','Part1'
         #'C', 'B', 'D', 'A', 'Part5', 'Part2', 'Part3', 'part4', 'user_3', 'user_4', 'user_5', 'user_6', 'user_7', 'user_9', 'user_10', 'Part1'
         train_signers = []
-        test_signers = ['E']
+        test_signers = ['cropped_test']
 
         X_train = data.loc[data['dir_name'].isin(train_signers)]['file_name'].values
         y_train = data.loc[data['dir_name'].isin(train_signers)]['Letter'].values
@@ -375,6 +388,9 @@ class CNN():
         val_loc = data.loc[data['dir_name'].isin(test_signers)]['root'].values
 
         print(dict(zip(label_encoder.classes_, label_encoder.transform(label_encoder.classes_))))
+
+        print(X_val)
+        print(val_loc)
         #print(X_train)
         # X_train = np.concatenate((X_data[:26445], X_data[39838:67209]))
         #
@@ -418,7 +434,7 @@ class CNN():
 
                         if self.resume:
                             self.log.info("ENTERED RESUME")
-                            saver.restore(sess=sess, save_path="C:/Riley/DeepLetters/CNN/trained_networks/one opt/static_v2_lr-1e-06/epoch-7/static_v2_lr-1e-06.ckpt")
+                            saver.restore(sess=sess, save_path="CNN/trained_networks/OG CNN/one opt/static_v2_lr-1e-06/epoch-7/static_v2_lr-1e-06.ckpt")
                             #chkp.print_tensors_in_checkpoint_file(relative_root + "/epoch-20/static_v2_lr-" + str(lr) + ".ckpt", tensor_name='', all_tensors=True)
 
                             # reader = tf.train.NewCheckpointReader(relative_root + "/epoch-20/static_v2_lr-" + str(lr) + ".ckpt")

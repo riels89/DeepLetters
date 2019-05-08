@@ -7,9 +7,9 @@ with tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_plac
 
         with tf.variable_scope(tf.get_variable_scope(), reuse=tf.AUTO_REUSE) as scope:
 
-            saver = tf.train.import_meta_graph("C:/Users/riley/DeepLetters/trained_model/static_v2_lr-1e-06.ckpt.meta")
+            saver = tf.train.import_meta_graph("CNN/trained_networks/1e-4-something else/static_v2_lr-0.0001/epoch-20/static_v2_lr-0.0001.ckpt.meta")
 
-            saver.restore(sess=sess, save_path="C:/Users/riley/DeepLetters/trained_model/static_v2_lr-1e-06.ckpt")
+            saver.restore(sess=sess, save_path="CNN/trained_networks/1e-4-something else/static_v2_lr-0.0001/epoch-20/static_v2_lr-0.0001.ckpt")
 
             graph = sess.graph
             probs = graph.get_tensor_by_name('prob3:0')
@@ -22,6 +22,5 @@ with tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_plac
                 output_node_names)
 
             # Save the frozen graph
-            with open('CNN/best_cnn.pb', 'wb') as f:
+            with open('CNN/cnn_w_G.pb', 'wb') as f:
               f.write(frozen_graph_def.SerializeToString())
-
