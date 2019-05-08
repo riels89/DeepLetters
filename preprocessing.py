@@ -155,6 +155,7 @@ def make_picture_list():
 
 def make_new_picture_list():
     new_picture_list = []
+
     for root, dirnames, filenames in os.walk('C:/Users/Riley/DeepLetters/New_Images_DeepLetters'):
         for file in filenames:
             if file[0] != 'j' and file[0] != 'z':
@@ -186,6 +187,7 @@ def crop_img():
 # make_picture_list()
 # make_new_picture_list()
 crop_img()
+
 
 # videos = load_data('C:/Riley/Documents/.Research Project/0', 1, symbols='ABCDEFGHIJKLMNOPQRSTUVWYXZ')
 
